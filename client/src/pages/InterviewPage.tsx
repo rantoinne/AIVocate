@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import './InterviewPage.css';
 
 const InterviewPage: React.FC = () => {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
   const timeLeft = useRef(25 * 60 + 30);
 
   useEffect(() => {
