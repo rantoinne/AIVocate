@@ -1,9 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './InterviewPage.css';
+import IntegratedEditor from '../components/IntegratedEditor';
 
 const InterviewPage: React.FC = () => {
+  const [code, setCode] = useState('');
+  const [language, setLanguage] = useState('javascript');
+  
   const timerRef = useRef<number | null>(null);
   const timeLeft = useRef(25 * 60 + 30);
+
 
   useEffect(() => {
     function updateTimer() {
@@ -42,27 +47,15 @@ const InterviewPage: React.FC = () => {
           <div className="main-panel">
             <div className="panel-header">
               <div className="panel-title">Code Editor</div>
-              <div>
-                <select style={{ padding: '0.25rem 0.5rem', border: '1px solid #e2e8f0', borderRadius: '0.25rem' }}>
-                  <option>JavaScript</option>
-                  <option>Python</option>
-                  <option>Java</option>
-                  <option>C++</option>
-                </select>
-                <button className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Run Code</button>
-              </div>
             </div>
-            <textarea
-              className="code-editor"
-              placeholder={`// Start coding here...\nfunction twoSum(nums, target) {\n  // Your solution here\n}`}
-              defaultValue={`// Write your solution here\nfunction twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map.has(complement)) {\n      return [map.get(complement), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}`}
-              style={{ fontFamily: 'Monaco, Menlo, Ubuntu Mono, monospace', fontSize: 14 }}
-              onInput={e => {
-                const ta = e.target as HTMLTextAreaElement;
-                ta.style.height = 'auto';
-                ta.style.height = ta.scrollHeight + 'px';
-              }}
-            />
+            <div style={{height: '100%', width: '100%'}}>
+              <IntegratedEditor
+                code={code}
+                language={language}
+                setCode={setCode}
+                setLanguage={setLanguage}
+              />
+            </div>
           </div>
           {/* Sidebar */}
           <div className="sidebar">
