@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "build": "vite build ./client",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview ./client",
+    "dev": "concurrently -n \"FE\" -c \"green\" \"npm run front:dev\"",
+    "front:dev": "vite serve ./client"
   },
   "dependencies": {
     "monaco-editor": "^0.52.2",
@@ -21,6 +22,7 @@
     "@types/react-dom": "^19.1.6",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.6.0",
+    "concurrently": "^9.2.0",
     "eslint": "^9.30.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
