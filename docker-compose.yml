@@ -1,0 +1,27 @@
+services:
+  aivocate-node:
+    container_name: aivocate-node
+    image: node:23.10
+    volumes:
+      - ./:/usr/src/aivocate-node:cached
+      - ./yarn_cache:/yarn:cached
+    working_dir: /usr/src/aivocate-node
+    command:
+      - /bin/bash
+      - -c
+      - |
+        echo 'startings' &&
+        yarn config set cache-folder /yarn &&
+        echo 'set cache' &&
+        yarn &&
+        echo 'yarn ran' &&
+        yarn dev
+    ports:
+      - 5173:5173
+    networks:
+      - aivocate-network
+
+networks:
+  aivocate-network:
+    name: aivocate-network
+    driver: bridge
