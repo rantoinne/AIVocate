@@ -29,3 +29,5 @@ yarn_cache
 # docker
 /aivocate-node
 /prod
+/aivocate-judge0
+/judge0.conf
