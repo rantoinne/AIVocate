@@ -22,9 +22,9 @@ services:
       - 8000:8000
       - 5173:5173
     networks:
-      - aivocate-network
+      - shared-network
 
 networks:
-  aivocate-network:
-    name: aivocate-network
+  shared-network:
+    name: shared-network
     driver: bridge

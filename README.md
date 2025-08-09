@@ -31,7 +31,7 @@ Create an accessible, intelligent interview practice platform that:
 
 ### 💻 Real-Time Coding Environment
 - **Live Code Editor**: Monaco Editor with syntax highlighting for multiple languages
-- **Instant Execution**: Secure code execution using Judge0 API
+- **Instant Execution**: Secure code execution using Piston API (runs in a sandboxed Docker container on a shared network)
 - **Code Analysis**: Real-time feedback on code quality and performance
 - **Language Support**: JavaScript, Python, Java, C++, and more
 
@@ -73,7 +73,7 @@ server/
 - **Frontend**: React 18, TypeScript, Monaco Editor, WebRTC
 - **Backend**: Node.js, Express.js, Socket.io, MongoDB
 - **AI Services**: OpenAI API, ElevenLabs (TTS)
-- **Code Execution**: Judge0 API
+- **Code Execution**: Piston API (Docker container, shared network)
 - **Deployment**: Vercel (Frontend), Railway (Backend)
 
 ## 🚀 Development Roadmap
@@ -144,9 +144,8 @@ cp .env.example .env
 # OpenAI API
 OPENAI_API_KEY=your_openai_api_key
 
-# Judge0 API
-JUDGE0_API_URL=https://judge0.com/api
-JUDGE0_API_KEY=your_judge0_api_key
+# Piston API
+PISTON_ENDPOINT=http://piston_api:2000
 
 # ElevenLabs TTS
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
@@ -221,7 +220,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **OpenAI** for providing the GPT API that powers our AI interviewer
-- **Judge0** for secure code execution capabilities
+- **Piston** for secure code execution capabilities (https://github.com/engineer-man/piston)
 - **Monaco Editor** team for the excellent code editing experience
 - **React** and **Node.js** communities for amazing open-source tools
 
