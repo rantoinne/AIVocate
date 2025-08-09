@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "outDir": "../prod",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2018",
+    "allowJs": false,
+    "resolveJsonModule": true
+  },
+  "include": ["./**/*"],
+  "exclude": ["node_modules"]
+}

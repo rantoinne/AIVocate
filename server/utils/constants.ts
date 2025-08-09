@@ -1,0 +1,1 @@
+export const getPistonEndpoint = () => process.env.PISTON_ENDPOINT || ''
