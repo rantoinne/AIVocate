@@ -1,4 +1,18 @@
 services:
+  aivocate-postgres:
+    container_name: aivocate-postgres
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: aivocate
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5432:5432
+    networks:
+      - shared-network
+
   aivocate-node:
     container_name: aivocate-node
     image: node:23.10
@@ -23,6 +37,11 @@ services:
       - 5173:5173
     networks:
       - shared-network
+    depends_on:
+      - aivocate-postgres
+
+volumes:
+  postgres_data:
 
 networks:
   shared-network:

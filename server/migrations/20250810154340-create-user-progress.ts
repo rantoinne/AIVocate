@@ -1,0 +1,58 @@
+export default {
+  async up (queryInterface, Sequelize) {
+    await queryInterface.createTable('user_progress', {
+      id: {
+        type: Sequelize.UUID,
+        primaryKey: true,
+        defaultValue: Sequelize.UUIDV4,
+      },
+      user_id: {
+        type: Sequelize.UUID,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      skill_category: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+      current_level: {
+        type: Sequelize.INTEGER,
+        defaultValue: 1,
+      },
+      experience_points: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
+      },
+      strengths: {
+        type: Sequelize.ARRAY(Sequelize.STRING),
+        defaultValue: [],
+      },
+      improvement_areas: {
+        type: Sequelize.ARRAY(Sequelize.STRING),
+        defaultValue: [],
+      },
+      last_assessment_date: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+      },
+    })
+
+    // Add unique constraint for user_id and skill_category combination
+    await queryInterface.addConstraint('user_progress', {
+      fields: ['user_id', 'skill_category'],
+      type: 'unique',
+      name: 'user_progress_user_id_skill_category_unique'
+    })
+  },
+
+  async down (queryInterface, Sequelize) {
+    await queryInterface.dropTable('user_progress')
+  }
+}

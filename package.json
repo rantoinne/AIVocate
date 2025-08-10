@@ -12,7 +12,8 @@
     "back:watch:typescript": "swc server --config-file server/.swcrc --out-dir prod --copy-files --source-root server --strip-leading-paths --watch",
     "back:build": "rimraf prod && swc server --config-file server/.swcrc --out-dir prod --copy-files --source-root server --strip-leading-paths",
     "back:watch:typescript:tsc": "tsc --skipLibCheck -p server --preserveWatchOutput --watch --noEmit",
-    "front:dev": "vite serve ./client"
+    "front:dev": "vite serve ./client",
+    "db:migrate": "node_modules/.bin/sequelize db:migrate"
   },
   "dependencies": {
     "ajv": "^8.17.1",
@@ -23,9 +24,12 @@
     "express-validator": "^7.2.1",
     "express-ws": "^5.0.2",
     "monaco-editor": "^0.52.2",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.7.0"
+    "react-router-dom": "^7.7.0",
+    "sequelize": "^6.37.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
@@ -38,6 +42,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-router-dom": "^5.3.3",
+    "@types/sequelize": "^6.12.0",
     "@vitejs/plugin-react": "^4.6.0",
     "concurrently": "^9.2.0",
     "eslint": "^9.30.1",
@@ -46,6 +51,7 @@
     "globals": "^16.3.0",
     "nodemon": "^3.1.10",
     "rimraf": "^6.0.1",
+    "sequelize-cli": "^6.6.3",
     "vite": "^7.0.4"
   }
 }
