@@ -5,15 +5,21 @@ import { getPistonEndpoint } from '../../utils/constants.js'
 
 const executeCode = async (req: Request, res: Response) => {
   try {
+    const {
+      language = 'javascript',
+      version = '20.11.1',
+      files = [{ name: 'test.js', content: 'console.log("Hello from Piston!");' }],
+    } = req.body
+
     const response = await fetch(`${getPistonEndpoint()}/api/v2/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        language: 'javascript',
-        version: '20.11.1',
-        files: [{ name: 'test.js', content: 'console.log("Hello from Piston!");' }]
+        files,
+        version,
+        language,
       })
     })
 

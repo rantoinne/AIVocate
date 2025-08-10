@@ -230,6 +230,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Issues**: [GitHub Issues](https://github.com/rantoinne/aivocate/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/rantoinne/aivocate/discussions)
 
+
+## Websocket comms
+Client                    Server                    AI Service
+  |                        |                         |
+  |-- join interview ----->|                         |
+  |<-- interview started --|                         |
+  |                        |-- generate question -->|
+  |<-- ai question --------|<-- question response --|
+  |                        |                         |
+  |-- speech data -------->|-- process speech ------>|
+  |                        |<-- next question -------|
+  |<-- ai response --------|                         |
+  |                        |                         |
+  |-- code update -------->|-- evaluate code ------->|
+  |<-- feedback -----------|<-- evaluation ----------|
+
 ---
 
 <div align="center">
