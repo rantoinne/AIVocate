@@ -38,12 +38,12 @@ class InterviewQuestion extends Model<InterviewQuestionAttributes, InterviewQues
 InterviewQuestion.init(
   {
     id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
-      defaultValue: DataTypes.UUIDV4,
     },
     interviewId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: Interview,
@@ -52,7 +52,7 @@ InterviewQuestion.init(
       field: 'interview_id',
     },
     questionId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: Question,

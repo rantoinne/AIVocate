@@ -17,6 +17,7 @@ interface InterviewAttributes {
   endedAt: Date | null
   durationSeconds: number | null
   createdAt: Date
+  session_id: string
 }
 
 // Define the creation attributes (id, createdAt, startedAt, endedAt, durationSeconds are auto-generated or optional)
@@ -37,18 +38,19 @@ class Interview extends Model<InterviewAttributes, InterviewCreationAttributes> 
   public endedAt!: Date | null
   public durationSeconds!: number | null
   public createdAt!: Date
+  public session_id!: string
 }
 
 // Initialize the Interview model
 Interview.init(
   {
     id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       primaryKey: true,
-      defaultValue: DataTypes.UUIDV4,
+      autoIncrement: true,
     },
     userId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: User,
@@ -84,6 +86,10 @@ Interview.init(
     },
     feedback: {
       type: DataTypes.JSONB,
+      defaultValue: {},
+    },
+    session_id: {
+      type: DataTypes.STRING(12),
       defaultValue: {},
     },
     aiPersonality: {

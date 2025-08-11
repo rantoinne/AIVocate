@@ -1,13 +1,15 @@
+import * as Sequelize from 'sequelize'
+
 export default {
-  async up (queryInterface, Sequelize) {
+  async up (queryInterface: Sequelize.QueryInterface) {
     await queryInterface.createTable('code_submissions', {
       id: {
-        type: Sequelize.UUID,
+        type: Sequelize.INTEGER,
         primaryKey: true,
-        defaultValue: Sequelize.UUIDV4,
+        autoIncrement: true,
       },
       interview_question_id: {
-        type: Sequelize.UUID,
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: 'interview_questions',
@@ -45,7 +47,7 @@ export default {
     })
   },
 
-  async down (queryInterface, Sequelize) {
+  async down (queryInterface: Sequelize.QueryInterface) {
     await queryInterface.dropTable('code_submissions')
   }
 }
