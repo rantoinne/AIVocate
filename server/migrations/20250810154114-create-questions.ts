@@ -1,10 +1,12 @@
+import * as Sequelize from 'sequelize'
+
 export default {
-  async up (queryInterface, Sequelize) {
+  async up (queryInterface: Sequelize.QueryInterface) {
     await queryInterface.createTable('questions', {
       id: {
-        type: Sequelize.UUID,
         primaryKey: true,
-        defaultValue: Sequelize.UUIDV4,
+        autoIncrement: true,
+        type: Sequelize.INTEGER,
       },
       title: {
         type: Sequelize.STRING(255),
@@ -53,7 +55,7 @@ export default {
     })
   },
 
-  async down (queryInterface, Sequelize) {
+  async down (queryInterface: Sequelize.QueryInterface) {
     await queryInterface.dropTable('questions')
   }
 }

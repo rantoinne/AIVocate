@@ -35,12 +35,12 @@ class CodeSubmission extends Model<CodeSubmissionAttributes, CodeSubmissionCreat
 CodeSubmission.init(
   {
     id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
-      defaultValue: DataTypes.UUIDV4,
     },
     interviewQuestionId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: InterviewQuestion,

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import asyncWrapper from '../../utils/asyncWrapper.js'
+import { asyncWrapper } from '../../utils/asyncWrapper.js'
 import { ApplicationError } from '../../utils/errors.js'
 import { getPistonEndpoint } from '../../utils/constants.js'
 

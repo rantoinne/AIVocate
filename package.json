@@ -13,7 +13,8 @@
     "back:build": "rimraf prod && swc server --config-file server/.swcrc --out-dir prod --copy-files --source-root server --strip-leading-paths",
     "back:watch:typescript:tsc": "tsc --skipLibCheck -p server --preserveWatchOutput --watch --noEmit",
     "front:dev": "vite serve ./client",
-    "db:migrate": "node_modules/.bin/sequelize db:migrate"
+    "db:migrate": "node_modules/.bin/sequelize db:migrate",
+    "db:migration": "node_modules/.bin/sequelize migration:generate --name"
   },
   "dependencies": {
     "ajv": "^8.17.1",
@@ -24,8 +25,8 @@
     "express-validator": "^7.2.1",
     "express-ws": "^5.0.2",
     "monaco-editor": "^0.52.2",
+    "nanoid": "^5.1.5",
     "pg": "^8.16.3",
-    "pg-hstore": "^2.3.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.0",

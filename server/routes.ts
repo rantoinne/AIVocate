@@ -2,9 +2,12 @@ import * as express from 'express'
 import { nextType, reqType, resType } from './config/types.js'
 import { ApplicationError } from './utils/errors.js'
 import pistonRouter from './features/Piston/Piston.routes.js'
+import interviewRouter from './features/Interview/Interview.routes.js'
 
 export default function routes(app: express.Application) {
   app.use(pistonRouter)
+  app.use(interviewRouter)
+  
   app.use('/api', (_req: reqType, res: resType) => res.status(404).end('404: Not found'))
 
   // NOTE: We're using a named function so it shows the name on express debugging and stack traces

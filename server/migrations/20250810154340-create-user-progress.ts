@@ -1,13 +1,15 @@
+import * as Sequelize from 'sequelize'
+
 export default {
-  async up (queryInterface, Sequelize) {
+  async up (queryInterface: Sequelize.QueryInterface) {
     await queryInterface.createTable('user_progress', {
       id: {
-        type: Sequelize.UUID,
+        type: Sequelize.INTEGER,
         primaryKey: true,
-        defaultValue: Sequelize.UUIDV4,
+        autoIncrement: true,
       },
       user_id: {
-        type: Sequelize.UUID,
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: 'users',
@@ -52,7 +54,7 @@ export default {
     })
   },
 
-  async down (queryInterface, Sequelize) {
+  async down (queryInterface: Sequelize.QueryInterface) {
     await queryInterface.dropTable('user_progress')
   }
 }
