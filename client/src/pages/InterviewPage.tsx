@@ -1,30 +1,40 @@
-import React, { useEffect, useRef, useState } from 'react';
-import './InterviewPage.css';
-import IntegratedEditor from '../components/IntegratedEditor';
+import React, { useEffect, useRef, useState } from 'react'
+import IntegratedEditor from '../components/IntegratedEditor'
+import './InterviewPage.css'
+import { useWebSocket } from '../hooks/socket'
+import { BASE_URL } from '../config/constants'
+import { useLocation } from 'react-router-dom'
 
 const InterviewPage: React.FC = () => {
-  const [code, setCode] = useState('');
-  const [language, setLanguage] = useState('javascript');
+  const location = useLocation()
+  const sessionId = location.state?.sessionId
   
-  const timerRef = useRef<number | null>(null);
-  const timeLeft = useRef(25 * 60 + 30);
+  const [code, setCode] = useState('')
+  const [language, setLanguage] = useState('javascript')
+  
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timeLeft = useRef(25 * 60 + 30)
 
+  const { connected } = useWebSocket({
+    url: `${window.location.protocol === 'https:' ? 'wss://' : 'ws://'}${window.location.host}${BASE_URL}interview-session/${sessionId}`,
+    onMessage: (msg) => console.log({ msg }),
+  })
 
   useEffect(() => {
     function updateTimer() {
-      const timerElem = document.querySelector('.timer');
-      if (!timerElem) return;
-      const minutes = Math.floor(timeLeft.current / 60);
-      const seconds = timeLeft.current % 60;
-      timerElem.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      timeLeft.current--;
+      const timerElem = document.querySelector('.timer')
+      if (!timerElem) return
+      const minutes = Math.floor(timeLeft.current / 60)
+      const seconds = timeLeft.current % 60
+      timerElem.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      timeLeft.current--
       if (timeLeft.current >= 0) {
-        timerRef.current = setTimeout(updateTimer, 1000);
+        timerRef.current = setTimeout(updateTimer, 1000)
       }
     }
-    updateTimer();
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, []);
+    updateTimer()
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
 
   return (
     <div id="interviewPage">
@@ -51,8 +61,8 @@ const InterviewPage: React.FC = () => {
             <div style={{height: '100%', width: '100%'}}>
               <IntegratedEditor
                 code={code}
-                language={language}
                 setCode={setCode}
+                language={language}
                 setLanguage={setLanguage}
               />
             </div>
@@ -113,7 +123,7 @@ const InterviewPage: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default InterviewPage;
+export default InterviewPage
