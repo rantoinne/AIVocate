@@ -1,12 +1,15 @@
 import * as express from 'express'
+import expressWs from 'express-ws'
 import { nextType, reqType, resType } from './config/types.js'
 import { ApplicationError } from './utils/errors.js'
 import pistonRouter from './features/Piston/Piston.routes.js'
-import interviewRouter from './features/Interview/Interview.routes.js'
+import interviewRouter, { interviewWebSocketEnabledRouter } from './features/Interview/Interview.routes.js'
 
-export default function routes(app: express.Application) {
+export default function routes(app: expressWs.Application) {
   app.use(pistonRouter)
   app.use(interviewRouter)
+  
+  interviewWebSocketEnabledRouter(app)
   
   app.use('/api', (_req: reqType, res: resType) => res.status(404).end('404: Not found'))
 
@@ -15,9 +18,9 @@ export default function routes(app: express.Application) {
   // nodejs won't know this function is for error handling
   // (More info: https://expressjs.com/en/guide/error-handling.html)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: ApplicationError, _req: reqType, res: resType, _next: nextType) => {
+  app.use((err: ApplicationError, req: reqType, res: resType, _next: nextType) => {
     // Only handle errors for API routes
-    if (_req.path.startsWith('/api')) {
+    if (req.path.startsWith('/api')) {
       console.log('Error: ', err)
       let errorResponse = {
         message: err?.status ? (err.message ?? 'Error interno') : 'Error interno',
