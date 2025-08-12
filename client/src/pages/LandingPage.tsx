@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRequest } from '../hooks/request'
 import { BASE_URL } from '../config/constants'
-import { LOCAL_STORAGE_KEYS, setLocalStorageKey } from '../utils/localStorage'
+import { getLocalStorageKey, LOCAL_STORAGE_KEYS, setLocalStorageKey } from '../utils/localStorage'
 import './LandingPage.css'
 
 const LandingPage: React.FC = () => {
@@ -21,6 +21,17 @@ const LandingPage: React.FC = () => {
       }
     )
   }
+
+  useEffect(() => {
+    const func = () => {
+      const sessionId = getLocalStorageKey(LOCAL_STORAGE_KEYS.INTERVIEW_SESSION_KEY)
+      console.log('RAN')
+      if (sessionId) {
+        alert('We detected an ongoing session on this browser. Would you like to continue?')
+      }
+    }
+    // func()
+  }, [])
   
   return (
     <div id="landingPage">

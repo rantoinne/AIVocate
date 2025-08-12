@@ -13,9 +13,7 @@ class RequestService {
     this.axiosInstance = axios.create({
       baseURL: baseUrl,
       timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     })
 
     // Add request interceptor
