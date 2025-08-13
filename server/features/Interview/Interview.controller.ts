@@ -3,14 +3,55 @@ import Interview from './Interview.js'
 import { generateId } from '../../utils/strings.js'
 import { reqType, resType } from '../../config/types.js'
 import { asyncWrapper, asyncWsWrapper } from '../../utils/asyncWrapper.js'
+import { generateAudio, sendViaWS } from './Interview.services.js'
+import { AUDIO_CHUNK_SIZE } from '../../utils/constants.js'
 
 const interviewSession = async (ws: WebSocket, req: reqType) => {
   const interviewSessionId = req.params.sessionId
   console.log('WebSocket connected for session:', interviewSessionId)
   
   // Send welcome message
-  ws.send(JSON.stringify({ type: 'chat', message: 'Hello! Connected to interview session.' }))
+  sendViaWS(ws, 'chat', 'Hello! Connected to interview session.')
+
+  const audio = await generateAudio('Hello!')
+  const bufferedAudio = Buffer.from(await audio.arrayBuffer())
+
+  const totalChunks = Math.ceil(bufferedAudio.length / AUDIO_CHUNK_SIZE);
   
+  sendViaWS(
+    ws,
+    'tts_start',
+    {
+      totalChunks,
+      format: 'mp3',
+      totalSize: bufferedAudio.length,
+    }
+  )
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * AUDIO_CHUNK_SIZE
+    const end = Math.min(start + AUDIO_CHUNK_SIZE, bufferedAudio.length)
+    const chunk = bufferedAudio.subarray(start, end)
+    
+    sendViaWS(
+      ws,
+      'tts_chunk',
+      {
+        chunkIndex: i,
+        chunk: chunk.toString('base64'),
+        isLast: i === totalChunks - 1
+      }
+    )
+    // Small delay to prevent overwhelming the connection
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
+  sendViaWS(
+    ws,
+    'tts_complete',
+    { totalChunks }
+  )
+
   // Set up ping/pong mechanism to keep connection alive
   let pingInterval: NodeJS.Timeout
   let pongTimeout: NodeJS.Timeout
@@ -90,6 +131,7 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
 }
 
 const createInterviewSession = async (req: reqType, res: resType) => {
+  // Keeping it static for now. Will ingest from user later
   const USER_ID = '2'
   const interview = await Interview.create({
     userId: USER_ID,

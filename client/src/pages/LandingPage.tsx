@@ -23,14 +23,24 @@ const LandingPage: React.FC = () => {
   }
 
   useEffect(() => {
-    const func = () => {
-      const sessionId = getLocalStorageKey(LOCAL_STORAGE_KEYS.INTERVIEW_SESSION_KEY)
-      console.log('RAN')
-      if (sessionId) {
-        alert('We detected an ongoing session on this browser. Would you like to continue?')
+    // const sessionId = getLocalStorageKey(LOCAL_STORAGE_KEYS.INTERVIEW_SESSION_KEY)
+    // if (sessionId) {
+    //   alert('We detected an ongoing session on this browser. Would you like to continue?')
+    // }
+    const func = async () => {
+      try {
+        // Request audio playback permission
+        await navigator.mediaDevices.getUserMedia({ audio: true })
+        
+        // Request microphone permission
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach(track => track.stop())
+      } catch (error) {
+        console.error('Error requesting permissions:', error)
+        alert('Please enable microphone and audio permissions to continue with the interview')
       }
     }
-    // func()
+    func()
   }, [])
   
   return (
