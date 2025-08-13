@@ -5,6 +5,9 @@ type Message =
   | { type: "pong" }
   | { type: "chat"; message: string }
   | { type: "user_joined"; userId: string }
+  | { type: "tts_start"; message: string }
+  | { type: "tts_chunk"; message: string }
+  | { type: "tts_complete"; message: string }
 
 type OutgoingMessage =
   | { type: "chat"; message: string }
@@ -55,9 +58,11 @@ export const useWebSocket = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const messageQueue = useRef<OutgoingMessage[]>([])
   const isManuallyDisconnected = useRef(false)
+  const onMessageRef = useRef<(msg: Message) => void>(onMessage)
+  const strictModeFirstRender = useRef<boolean>(true)
+
   const [connected, setConnected] = useState(false)
-  
-  const onMessageRef = useRef(onMessage)
+
   onMessageRef.current = onMessage
 
   const clearHeartbeat = useCallback(() => {
@@ -175,27 +180,12 @@ export const useWebSocket = ({
     messageQueue.current = []
   }, [clearHeartbeat, clearReconnectTimeout])
 
-  const prevConnectionParams = useRef({ url, authToken })
-  
   useEffect(() => {
-    const currentParams = { url, authToken }
-    const paramsChanged = 
-      prevConnectionParams.current.url !== currentParams.url ||
-      prevConnectionParams.current.authToken !== currentParams.authToken
-    
-    if (paramsChanged) {
-      prevConnectionParams.current = currentParams
-      isManuallyDisconnected.current = false
-      
-      if (wsRef.current) {
-        wsRef.current.close()
-      }
-      
-      connectWebSocket()
+    if (strictModeFirstRender.current) {
+      strictModeFirstRender.current = false
+      return
     }
-  }, [url, authToken, connectWebSocket])
-
-  useEffect(() => {
+    
     isManuallyDisconnected.current = false
     connectWebSocket()
     
