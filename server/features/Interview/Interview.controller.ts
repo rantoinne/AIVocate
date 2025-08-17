@@ -13,8 +13,8 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
   // Send welcome message
   sendViaWS(ws, 'chat', 'Hello! Connected to interview session.')
 
-  const audio = await generateAudio('Hello! Interview will begin shortly')
-  // const audio = await generateAudio('Hello!')
+  // const audio = await generateAudio('Hello! Interview will begin shortly')
+  const audio = await generateAudio('Hello!')
   const bufferedAudio = Buffer.from(await audio.arrayBuffer())
 
   const totalChunks = Math.ceil(bufferedAudio.length / AUDIO_CHUNK_SIZE);
@@ -43,8 +43,8 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
       'tts_chunk',
       {
         chunkIndex: i,
+        isLast: i === totalChunks - 1,
         chunk: chunk.toString('base64'),
-        isLast: i === totalChunks - 1
       }
     )
 

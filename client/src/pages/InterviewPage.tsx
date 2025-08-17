@@ -1,12 +1,9 @@
+import { useLocation } from 'react-router-dom'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import IntegratedEditor from '../components/IntegratedEditor'
 import './InterviewPage.css'
 import { useWebSocket } from '../hooks/socket'
 import { BASE_URL } from '../config/constants'
-import { useLocation } from 'react-router-dom'
-
-// Try different sample rates to find the correct one
-const POSSIBLE_SAMPLE_RATES = [8000, 11025, 16000, 22050, 24000, 44100, 48000]
+import IntegratedEditor from '../components/IntegratedEditor'
 
 // PCM Audio Configuration - will be dynamically determined
 const PCM_CONFIG = {
@@ -29,10 +26,8 @@ const InterviewPage: React.FC = () => {
 
   const [code, setCode] = useState('')
   const [language, setLanguage] = useState('javascript')
+  // only as a flag to know when does AudioContext start playing the audio
   const [isPlaying, setIsPlaying] = useState(false)
-  const [autoplayEnabled, setAutoplayEnabled] = useState(false)
-  const [bufferedChunks, setBufferedChunks] = useState<PCMChunk[]>([])
-  const [currentSampleRate, setCurrentSampleRate] = useState(PCM_CONFIG.sampleRate)
   const [streamStats, setStreamStats] = useState({
     chunksReceived: 0,
     chunksPlayed: 0,
@@ -41,6 +36,10 @@ const InterviewPage: React.FC = () => {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const timeLeft = useRef(25 * 60 + 30)
+
+  /**
+   * AudioContext refs
+   */
   const audioContextRef = useRef<AudioContext | null>(null)
   const gainNodeRef = useRef<GainNode | null>(null)
   const nextStartTimeRef = useRef(0)
@@ -49,11 +48,11 @@ const InterviewPage: React.FC = () => {
   const currentStreamIdRef = useRef<string | null>(null)
 
   // Initialize Web Audio API for PCM with dynamic sample rate
-  const initAudioContext = useCallback(async (sampleRate = currentSampleRate) => {
+  const initAudioContext = useCallback(async () => {
     // Always recreate if context is closed or sample rate changed
     if (audioContextRef.current?.state === 'closed' || 
         !audioContextRef.current || 
-        audioContextRef.current.sampleRate !== sampleRate) {
+        audioContextRef.current.sampleRate !== PCM_CONFIG.sampleRate) {
       
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
         await audioContextRef.current.close()
@@ -74,13 +73,13 @@ const InterviewPage: React.FC = () => {
     try {
       // Create new AudioContext with specified sample rate
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
-        sampleRate: sampleRate
+        sampleRate: PCM_CONFIG.sampleRate
       })
       
       // Create gain node for volume control
       gainNodeRef.current = audioContextRef.current.createGain()
       gainNodeRef.current.connect(audioContextRef.current.destination)
-      gainNodeRef.current.gain.value = 0.8
+      gainNodeRef.current.gain.value = 1.0
       
       // Resume if suspended (autoplay policy)
       if (audioContextRef.current.state === 'suspended') {
@@ -90,12 +89,12 @@ const InterviewPage: React.FC = () => {
       nextStartTimeRef.current = audioContextRef.current.currentTime
       isInitializedRef.current = true
       
-      console.log(`PCM AudioContext initialized: ${audioContextRef.current.sampleRate}Hz (requested: ${sampleRate}Hz), state: ${audioContextRef.current.state}`)
+      console.log(`PCM AudioContext initialized: ${audioContextRef.current.sampleRate}Hz (requested: ${PCM_CONFIG.sampleRate}Hz), state: ${audioContextRef.current.state}`)
     } catch (error) {
       console.error('Failed to initialize AudioContext for PCM:', error)
       throw error
     }
-  }, [currentSampleRate])
+  }, [])
 
   // Convert PCM bytes to Float32Array (16-bit signed PCM)
   const convertPCMToFloat32 = useCallback((pcmBytes: Uint8Array): Float32Array => {
@@ -133,28 +132,28 @@ const InterviewPage: React.FC = () => {
     const audioBuffer = audioContextRef.current.createBuffer(
       PCM_CONFIG.channels,
       pcmData.length,
-      currentSampleRate // Use current sample rate
+      PCM_CONFIG.sampleRate
     )
 
     // Copy PCM data to audio buffer (mono channel)
-    const channelData = audioBuffer.getChannelData(0)
+    const channelData = audioBuffer.getChannelData(0) // similar to array index
     channelData.set(pcmData)
 
     return audioBuffer
-  }, [currentSampleRate])
+  }, [])
 
   // Play PCM audio buffer with precise timing
   const playPCMBuffer = useCallback(async (pcmData: Float32Array): Promise<void> => {
     // Ensure AudioContext is ready before playing
     if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
       console.log('AudioContext closed or missing, reinitializing...')
-      await initAudioContext(currentSampleRate)
+      await initAudioContext()
     }
-    
+
     if (!audioContextRef.current || !gainNodeRef.current) {
       throw new Error('Failed to initialize AudioContext')
     }
-    
+
     // Resume if suspended
     if (audioContextRef.current.state === 'suspended') {
       await audioContextRef.current.resume()
@@ -164,22 +163,24 @@ const InterviewPage: React.FC = () => {
       try {
         // Create audio buffer from PCM data
         const audioBuffer = createPCMAudioBuffer(pcmData)
-        
+
         // Create buffer source
         const source = audioContextRef.current!.createBufferSource()
         source.buffer = audioBuffer
+        // Connect AudioBufferSourceNode to GainNode
         source.connect(gainNodeRef.current!)
-        
+        // By this point, the chain is complete (AudioBufferSourceNode -> GainNode -> Destination(speaker))
+
         // Calculate precise timing for seamless playback
         const currentTime = audioContextRef.current!.currentTime
         const startTime = Math.max(currentTime, nextStartTimeRef.current)
-        
+
         // Schedule playback
         source.start(startTime)
         nextStartTimeRef.current = startTime + audioBuffer.duration
-        
-        console.log(`Playing PCM chunk: ${pcmData.length} samples, duration: ${audioBuffer.duration.toFixed(3)}s, start: ${startTime.toFixed(3)}s, rate: ${currentSampleRate}Hz`)
-        
+
+        console.log(`Playing PCM chunk: ${pcmData.length} samples, duration: ${audioBuffer.duration.toFixed(3)}s, start: ${startTime.toFixed(3)}s, rate: ${PCM_CONFIG.sampleRate}Hz`)
+
         // Handle playback completion
         source.onended = () => {
           setStreamStats(prev => ({
@@ -189,69 +190,23 @@ const InterviewPage: React.FC = () => {
           }))
           resolve()
         }
-        
+
         source.addEventListener('error', (error) => {
           console.error('AudioBufferSource error:', error)
           reject(error)
         })
-        
+
       } catch (error) {
         console.error('Error creating/playing PCM buffer:', error)
         reject(error)
       }
     })
-  }, [createPCMAudioBuffer, initAudioContext, currentSampleRate])
-
-  // Test different sample rates for the first chunk
-  // const testSampleRates = useCallback(async (pcmData: Float32Array) => {
-  //   console.log('Testing different sample rates to find the correct one...')
-    
-  //   for (const testRate of POSSIBLE_SAMPLE_RATES) {
-  //     console.log(`Testing sample rate: ${testRate}Hz`)
-      
-  //     try {
-  //       await initAudioContext(testRate)
-        
-  //       if (!audioContextRef.current) continue
-        
-  //       const audioBuffer = audioContextRef.current.createBuffer(1, pcmData.length, testRate)
-  //       const channelData = audioBuffer.getChannelData(0)
-  //       channelData.set(pcmData)
-        
-  //       const source = audioContextRef.current.createBufferSource()
-  //       source.buffer = audioBuffer
-  //       source.connect(gainNodeRef.current!)
-        
-  //       source.start()
-        
-  //       // Let it play for a moment to test
-  //       await new Promise(resolve => setTimeout(resolve, 1000))
-  //       source.stop()
-        
-  //       // Ask user if this sounds right
-  //       const isCorrect = confirm(`Does this sample rate (${testRate}Hz) sound correct? Click OK if yes, Cancel to try next rate.`)
-        
-  //       if (isCorrect) {
-  //         setCurrentSampleRate(testRate)
-  //         console.log(`Selected sample rate: ${testRate}Hz`)
-  //         return testRate
-  //       }
-        
-  //     } catch (error) {
-  //       console.error(`Error testing ${testRate}Hz:`, error)
-  //     }
-  //   }
-    
-  //   // Default fallback
-  //   console.log('Using default sample rate: 22050Hz')
-  //   setCurrentSampleRate(22050)
-  //   return 22050
-  // }, [initAudioContext])
+  }, [createPCMAudioBuffer, initAudioContext])
 
   // Process base64 PCM chunk
   const processPCMChunk = useCallback(async (chunkData: { chunk: string, chunkIndex: number, isLast: boolean }) => {
     const { chunk, chunkIndex, isLast } = chunkData
-    
+
     try {
       // Convert base64 to Uint8Array
       const binary = atob(chunk)
@@ -259,114 +214,52 @@ const InterviewPage: React.FC = () => {
       for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i)
       }
-      
+
       // Convert PCM bytes to Float32Array
       const pcmFloat32 = convertPCMToFloat32(bytes)
-      
+
       console.log(`Received PCM chunk ${chunkIndex}: ${bytes.length} bytes, ${pcmFloat32.length} samples, isLast: ${isLast}`)
-      
-      // For first chunk, test sample rates if needed
-      if (chunkIndex === 0 && autoplayEnabled) {
-        // const shouldTest = confirm('Test different sample rates to find the correct one? (Click Cancel to use current setting)')
-        // if (shouldTest) {
-        //   // await testSampleRates(pcmFloat32)
-        //   await initAudioContext(currentSampleRate)
-        // }
-      }
-      
+
       // Update stats
       setStreamStats(prev => ({
         ...prev,
         chunksReceived: prev.chunksReceived + 1
       }))
-      
+
       // Validate chunk order
       if (chunkIndex !== expectedChunkIndexRef.current) {
         console.warn(`Chunk order mismatch. Expected: ${expectedChunkIndexRef.current}, Got: ${chunkIndex}`)
       }
       expectedChunkIndexRef.current = chunkIndex + 1
-      
-      if (!autoplayEnabled || !isInitializedRef.current) {
+
+      if (!isInitializedRef.current) {
         // Buffer chunk if autoplay not enabled
         console.log('Buffering PCM chunk until autoplay is enabled')
-        setBufferedChunks(prev => [...prev, { data: pcmFloat32, chunkIndex, isLast }])
         return
       }
 
       // Play chunk immediately
       await playPCMBuffer(pcmFloat32)
       setIsPlaying(true)
-      
+
       if (isLast) {
         console.log('Last chunk processed - stream complete')
         setTimeout(() => setIsPlaying(false), 500) // Brief delay before stopping
       }
-      
     } catch (error) {
       console.error('Error processing PCM chunk:', error)
     }
-  }, [autoplayEnabled, convertPCMToFloat32, playPCMBuffer, currentSampleRate, initAudioContext])
-
-  // Process all buffered chunks when autoplay is enabled
-  const processBufferedChunks = useCallback(async () => {
-    if (bufferedChunks.length === 0 || !autoplayEnabled || !isInitializedRef.current) {
-      return
-    }
-    
-    console.log(`Processing ${bufferedChunks.length} buffered PCM chunks`)
-    
-    // Sort chunks by index to ensure correct order
-    const sortedChunks = [...bufferedChunks].sort((a, b) => a.chunkIndex - b.chunkIndex)
-    
-    try {
-      for (const chunk of sortedChunks) {
-        await playPCMBuffer(chunk.data)
-        
-        // Small delay between chunks to prevent overwhelming
-        await new Promise(resolve => setTimeout(resolve, 5))
-        
-        if (chunk.isLast) {
-          console.log('Last buffered chunk processed')
-          setTimeout(() => setIsPlaying(false), 500)
-        }
-      }
-      
-      setIsPlaying(true)
-      setBufferedChunks([]) // Clear processed chunks
-      
-    } catch (error) {
-      console.error('Error processing buffered chunks:', error)
-    }
-  }, [bufferedChunks, autoplayEnabled, playPCMBuffer])
-
-  // Enable autoplay with user interaction
-  const enableAutoplay = useCallback(async () => {
-    try {
-      await initAudioContext(currentSampleRate)
-      setAutoplayEnabled(true)
-      console.log('PCM Autoplay enabled!')
-      
-      // Process any buffered chunks after short delay
-      setTimeout(() => {
-        processBufferedChunks()
-      }, 100)
-      
-    } catch (error) {
-      console.error('Failed to enable PCM autoplay:', error)
-      alert('Failed to enable audio. Please try again.')
-    }
-  }, [initAudioContext, processBufferedChunks, currentSampleRate])
+  }, [convertPCMToFloat32, playPCMBuffer, initAudioContext])
 
   // Resets audio state for new stream
   const resetAudioState = useCallback(async () => {
     setIsPlaying(false)
-    setBufferedChunks([])
     setStreamStats({ chunksReceived: 0, chunksPlayed: 0, totalDuration: 0 })
     expectedChunkIndexRef.current = 0
     
     // Ensure AudioContext is ready for new stream
     try {
-      await initAudioContext(currentSampleRate)
+      await initAudioContext()
       if (audioContextRef.current) {
         nextStartTimeRef.current = audioContextRef.current.currentTime
       }
@@ -375,17 +268,7 @@ const InterviewPage: React.FC = () => {
     }
     
     console.log('Audio state reset for new stream')
-  }, [initAudioContext, currentSampleRate])
-
-  // Change sample rate manually
-  const changeSampleRate = useCallback(async (newRate: number) => {
-    console.log(`Changing sample rate from ${currentSampleRate}Hz to ${newRate}Hz`)
-    setCurrentSampleRate(newRate)
-    
-    if (audioContextRef.current) {
-      await initAudioContext(newRate)
-    }
-  }, [currentSampleRate, initAudioContext])
+  }, [initAudioContext])
 
   // WebSocket message handler
   const { connected } = useWebSocket({
@@ -408,7 +291,7 @@ const InterviewPage: React.FC = () => {
           try {
             const parsedMessage = JSON.parse(msg.message)
             if (parsedMessage?.chunk) {
-              processPCMChunk(parsedMessage)
+              await processPCMChunk(parsedMessage)
             } else {
               console.error('Invalid TTS chunk format:', parsedMessage)
             }
@@ -457,25 +340,6 @@ const InterviewPage: React.FC = () => {
     }
   }, [])
 
-  // Auto-enable autoplay attempt on mount
-  useEffect(() => {
-    const tryAutoEnable = async () => {
-      try {
-        await initAudioContext(currentSampleRate)
-        setAutoplayEnabled(true)
-        console.log('PCM Autoplay auto-enabled successfully!')
-      } catch (error) {
-        console.log('Auto-enable failed - user interaction required:', error)
-      }
-    }
-    
-    tryAutoEnable()
-    const timeout = setTimeout(tryAutoEnable, 1000)
-    
-    return () => clearTimeout(timeout)
-  }, [initAudioContext, currentSampleRate])
-
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       console.log('Component unmounting - AudioContext will be garbage collected')
@@ -560,25 +424,6 @@ const InterviewPage: React.FC = () => {
             <div className="controls-panel">
               <div className="timer">25:30</div>
               
-              {/* Sample Rate Control */}
-              <div className="control-group">
-                <label className="control-label">Sample Rate</label>
-                <select 
-                  value={currentSampleRate}
-                  onChange={(e) => changeSampleRate(Number(e.target.value))}
-                  style={{ 
-                    width: '100%', 
-                    padding: '0.5rem', 
-                    border: '1px solid #e2e8f0', 
-                    borderRadius: '0.25rem' 
-                  }}
-                >
-                  {POSSIBLE_SAMPLE_RATES.map(rate => (
-                    <option key={rate} value={rate}>{rate}Hz</option>
-                  ))}
-                </select>
-              </div>
-              
               {/* Audio Status */}
               <div className="control-group">
                 <label className="control-label">PCM Audio Status</label>
@@ -587,23 +432,14 @@ const InterviewPage: React.FC = () => {
                   border: '1px solid #e2e8f0', 
                   borderRadius: '0.25rem', 
                   fontSize: '0.875rem',
-                  backgroundColor: autoplayEnabled ? '#f0f9ff' : '#fef3c7'
+                  backgroundColor: '#f0f9ff'
                 }}>
                   <div style={{ marginBottom: '0.25rem' }}>
-                    {autoplayEnabled ? (
-                      <span style={{ color: '#059669' }}>✓ Audio Enabled ({currentSampleRate}Hz)</span>
-                    ) : (
-                      <span style={{ color: '#d97706' }}>⚠ Audio Disabled</span>
-                    )}
+                    <span style={{ color: '#059669' }}>✓ Audio Enabled ({PCM_CONFIG.sampleRate}Hz)</span>
                   </div>
                   
                   <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
                     {isPlaying && <span style={{ color: '#3b82f6' }}>🎵 Playing</span>}
-                    {bufferedChunks.length > 0 && (
-                      <span style={{ color: '#8b5cf6', marginLeft: isPlaying ? '10px' : '0' }}>
-                        📦 {bufferedChunks.length} buffered
-                      </span>
-                    )}
                   </div>
                   
                   {/* Stream Statistics */}
@@ -630,13 +466,12 @@ const InterviewPage: React.FC = () => {
                   style={{ 
                     width: '100%', 
                     marginBottom: '0.5rem',
-                    backgroundColor: autoplayEnabled ? '#10b981' : '#3b82f6',
+                    backgroundColor: '#10b981',
                     color: 'white'
                   }} 
-                  onClick={enableAutoplay}
-                  disabled={autoplayEnabled}
+                  disabled
                 >
-                  {autoplayEnabled ? '✓ PCM Audio Enabled' : '🔊 Enable PCM Audio'}
+                  ✓ PCM Audio Enabled
                 </button>
                 
                 <button 
