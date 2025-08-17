@@ -13,22 +13,27 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
   // Send welcome message
   sendViaWS(ws, 'chat', 'Hello! Connected to interview session.')
 
-  const audio = await generateAudio('Hello!')
+  const audio = await generateAudio('Hello! Interview will begin shortly')
+  // const audio = await generateAudio('Hello!')
   const bufferedAudio = Buffer.from(await audio.arrayBuffer())
 
   const totalChunks = Math.ceil(bufferedAudio.length / AUDIO_CHUNK_SIZE);
   
+  const startTime = performance.now()
   sendViaWS(
     ws,
     'tts_start',
     {
       totalChunks,
-      format: 'mp3',
+      format: 'pcm',
       totalSize: bufferedAudio.length,
     }
   )
 
+  let totalLatency = 0
   for (let i = 0; i < totalChunks; i++) {
+    const chunkStartTime = performance.now()
+    
     const start = i * AUDIO_CHUNK_SIZE
     const end = Math.min(start + AUDIO_CHUNK_SIZE, bufferedAudio.length)
     const chunk = bufferedAudio.subarray(start, end)
@@ -42,14 +47,27 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
         isLast: i === totalChunks - 1
       }
     )
+
+    const chunkLatency = performance.now() - chunkStartTime
+    totalLatency += chunkLatency
+
     // Small delay to prevent overwhelming the connection
-    await new Promise(resolve => setTimeout(resolve, 10))
+    await new Promise(resolve => setTimeout(resolve, 5))
   }
 
+  const totalTime = performance.now() - startTime
+  
   sendViaWS(
     ws,
     'tts_complete',
-    { totalChunks }
+    { 
+      totalChunks,
+      metrics: {
+        totalTimeMs: Math.round(totalTime),
+        averageChunkLatencyMs: Math.round(totalLatency / totalChunks),
+        totalLatencyMs: Math.round(totalLatency)
+      }
+    }
   )
 
   // Set up ping/pong mechanism to keep connection alive

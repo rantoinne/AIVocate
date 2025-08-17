@@ -8,12 +8,12 @@ export const sendViaWS = (ws: WebSocket, type: string, message: string | object)
   ws.send(JSON.stringify({ type, message }))
 }
 
-export const generateAudio = async (text: string) => {
+export const generateAudio = async (input: string) => {
   const audio = await openai.audio.speech.create({
+    input,
     model: 'tts-1',
-    voice: 'alloy',
-    input: text,
-    response_format: 'mp3',
+    voice: 'nova',
+    response_format: 'pcm',
   })
 
   return audio

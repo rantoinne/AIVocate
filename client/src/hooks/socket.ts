@@ -15,7 +15,7 @@ type OutgoingMessage =
 
 interface UseWebSocketOptions {
   url: string
-  onMessage: (msg: Message) => void
+  onMessage: (msg: Message) => Promise<void>
   heartbeatInterval?: number
   reconnectMaxDelay?: number
   reconnectAttempts?: number
@@ -58,7 +58,7 @@ export const useWebSocket = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const messageQueue = useRef<OutgoingMessage[]>([])
   const isManuallyDisconnected = useRef(false)
-  const onMessageRef = useRef<(msg: Message) => void>(onMessage)
+  const onMessageRef = useRef<(msg: Message) => Promise<void>>(onMessage)
   const strictModeFirstRender = useRef<boolean>(true)
   const prevConnectionParams = useRef({ url, authToken })
 
@@ -123,12 +123,12 @@ export const useWebSocket = ({
         })
       }
 
-      ws.onmessage = (event) => {
+      ws.onmessage = async (event) => {
         try {
           const parsed: Message = JSON.parse(event.data)
           if (parsed.type !== 'pong') {
             // Use the ref to get the latest callback
-            onMessageRef.current(parsed)
+            await onMessageRef.current(parsed)
           }
         } catch (err) {
           console.error("Failed to parse WebSocket message", err)
