@@ -5,6 +5,9 @@ type Message =
   | { type: "pong" }
   | { type: "chat"; message: string }
   | { type: "user_joined"; userId: string }
+  | { type: "tts_start"; message: string }
+  | { type: "tts_chunk"; message: string }
+  | { type: "tts_complete"; message: string }
 
 type OutgoingMessage =
   | { type: "chat"; message: string }
@@ -12,7 +15,7 @@ type OutgoingMessage =
 
 interface UseWebSocketOptions {
   url: string
-  onMessage: (msg: Message) => void
+  onMessage: (msg: Message) => Promise<void>
   heartbeatInterval?: number
   reconnectMaxDelay?: number
   reconnectAttempts?: number
@@ -55,9 +58,12 @@ export const useWebSocket = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const messageQueue = useRef<OutgoingMessage[]>([])
   const isManuallyDisconnected = useRef(false)
+  const onMessageRef = useRef<(msg: Message) => Promise<void>>(onMessage)
+  const strictModeFirstRender = useRef<boolean>(true)
+  const prevConnectionParams = useRef({ url, authToken })
+
   const [connected, setConnected] = useState(false)
-  
-  const onMessageRef = useRef(onMessage)
+
   onMessageRef.current = onMessage
 
   const clearHeartbeat = useCallback(() => {
@@ -117,12 +123,12 @@ export const useWebSocket = ({
         })
       }
 
-      ws.onmessage = (event) => {
+      ws.onmessage = async (event) => {
         try {
           const parsed: Message = JSON.parse(event.data)
           if (parsed.type !== 'pong') {
             // Use the ref to get the latest callback
-            onMessageRef.current(parsed)
+            await onMessageRef.current(parsed)
           }
         } catch (err) {
           console.error("Failed to parse WebSocket message", err)
@@ -174,8 +180,6 @@ export const useWebSocket = ({
     setConnected(false)
     messageQueue.current = []
   }, [clearHeartbeat, clearReconnectTimeout])
-
-  const prevConnectionParams = useRef({ url, authToken })
   
   useEffect(() => {
     const currentParams = { url, authToken }
@@ -194,8 +198,13 @@ export const useWebSocket = ({
       connectWebSocket()
     }
   }, [url, authToken, connectWebSocket])
-
+  
   useEffect(() => {
+    if (strictModeFirstRender.current) {
+      strictModeFirstRender.current = false
+      return
+    }
+    
     isManuallyDisconnected.current = false
     connectWebSocket()
     
