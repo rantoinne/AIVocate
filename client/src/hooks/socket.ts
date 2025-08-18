@@ -8,10 +8,15 @@ type Message =
   | { type: "tts_start"; message: string }
   | { type: "tts_chunk"; message: string }
   | { type: "tts_complete"; message: string }
+  | { type: "transcription"; message: string }
+  | { type: "ai_response"; message: string }
 
 type OutgoingMessage =
   | { type: "chat"; message: string }
   | { type: "ping" }
+  | { type: "audio_chunk"; message: string }
+  | { type: "recording_start"; message: string }
+  | { type: "recording_end"; message: string }
 
 interface UseWebSocketOptions {
   url: string

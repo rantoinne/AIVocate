@@ -7,10 +7,10 @@ import IntegratedEditor from '../../components/IntegratedEditor'
 
 // PCM Audio Configuration - will be dynamically determined
 const PCM_CONFIG = {
-  sampleRate: 22050,    // Start with common speech rate, will be adjusted
   channels: 1,          // Mono audio
   bitDepth: 16,         // 16-bit samples
   chunkSize: 8192,      // 8KB chunks from backend
+  sampleRate: 22050,    // Start with common speech rate, will be adjusted
   samplesPerChunk: 4096 // 8192 bytes ÷ 2 bytes per sample
 }
 
@@ -22,6 +22,7 @@ interface PCMChunk {
 
 const InterviewPage: React.FC = () => {
   const location = useLocation()
+
   const sessionId = location.state?.sessionId
 
   const [code, setCode] = useState('')
@@ -45,7 +46,9 @@ const InterviewPage: React.FC = () => {
   const nextStartTimeRef = useRef(0)
   const isInitializedRef = useRef(false)
   const expectedChunkIndexRef = useRef(0)
-  const currentStreamIdRef = useRef<string | null>(null)
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   // Initialize Web Audio API for PCM with dynamic sample rate
   const initAudioContext = useCallback(async () => {
@@ -179,7 +182,9 @@ const InterviewPage: React.FC = () => {
         source.start(startTime)
         nextStartTimeRef.current = startTime + audioBuffer.duration
 
-        console.log(`Playing PCM chunk: ${pcmData.length} samples, duration: ${audioBuffer.duration.toFixed(3)}s, start: ${startTime.toFixed(3)}s, rate: ${PCM_CONFIG.sampleRate}Hz`)
+        console.log(`Playing PCM chunk: ${pcmData.length} samples, duration: ${audioBuffer.duration.toFixed(3)}s, start: ${startTime.toFixed(3)}s, rate: ${PCM_CONFIG.sampleRate}Hz`
+
+)
 
         // Handle playback completion
         source.onended = () => {
@@ -270,8 +275,62 @@ const InterviewPage: React.FC = () => {
     console.log('Audio state reset for new stream')
   }, [initAudioContext])
 
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      })
+
+      streamRef.current = stream
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 16000,
+      })
+
+      mediaRecorderRef.current = mediaRecorder
+
+      // Send audio chunks through existing WebSocket
+      mediaRecorder.ondataavailable = (event) => {
+        console.log('data available', event.data)
+        if (event.data.size > 0) {
+          // Convert blob to base64 for JSON transport
+          const reader = new FileReader()
+          reader.onload = () => {
+            const base64Audio = (reader.result as string).split(',')[1]
+            send({
+              type: 'audio_chunk',
+              message: JSON.stringify({
+                data: base64Audio,
+                timestamp: Date.now()
+              })
+            })
+          }
+          reader.readAsDataURL(event.data)
+        }
+      }
+
+      mediaRecorder.start(500) // 500ms chunks
+      
+      // Notify backend that recording started
+      send({
+        type: 'recording_start',
+        message: JSON.stringify({ timestamp: Date.now() })
+      })
+
+    } catch (error) {
+      console.error('Error starting recording:', error)
+    }
+  }, [])
+
   // WebSocket message handler
-  const { connected } = useWebSocket({
+  const { connected, send } = useWebSocket({
     url: `${window.location.protocol === 'https:' ? 'wss://' : 'ws://'}${window.location.host}${BASE_URL}interview-session/${sessionId}`,
     onMessage: async (msg) => {
       console.log('WebSocket message:', { type: msg.type, timestamp: new Date().toISOString() })
@@ -279,12 +338,12 @@ const InterviewPage: React.FC = () => {
       switch (msg.type) {
         case 'chat':
           console.log('Chat message:', msg.message)
+          await startRecording()
           break
 
         case 'tts_start':
           console.log('TTS stream starting:', msg.message)
           await resetAudioState()
-          currentStreamIdRef.current = Date.now().toString()
           break
         
         case 'tts_chunk': {
@@ -304,18 +363,47 @@ const InterviewPage: React.FC = () => {
         case 'tts_complete':
           console.log('TTS stream completed:', msg.message)
           expectedChunkIndexRef.current = 0
-          currentStreamIdRef.current = null
           
           setTimeout(() => {
             setIsPlaying(false)
           }, 1000)
           break
           
+        case 'transcription':
+          console.log('Transcription received:', msg.message)
+          // Handle transcription result here
+          // You can dispatch this to your state management or call a callback
+          break
+
+        case 'ai_response':
+          console.log('AI response:', msg.message)
+          // Handle AI text response if needed before TTS
+          break
         default:
           console.log('Unknown message type:', msg)
       }
     },
   })
+
+  // Stop audio recording
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+
+    // Notify backend that recording ended
+    if (connected) {
+      send({
+        type: 'recording_end',
+        message: JSON.stringify({ timestamp: Date.now() })
+      })
+    }
+  }, [connected, send])
 
   // Timer functionality
   useEffect(() => {
@@ -343,6 +431,7 @@ const InterviewPage: React.FC = () => {
   useEffect(() => {
     return () => {
       console.log('Component unmounting - AudioContext will be garbage collected')
+      stopRecording()
     }
   }, [])
 
@@ -438,10 +527,6 @@ const InterviewPage: React.FC = () => {
                     <span style={{ color: '#059669' }}>✓ Audio Enabled ({PCM_CONFIG.sampleRate}Hz)</span>
                   </div>
                   
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                    {isPlaying && <span style={{ color: '#3b82f6' }}>🎵 Playing</span>}
-                  </div>
-                  
                   {/* Stream Statistics */}
                   <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
                     Received: {streamStats.chunksReceived} | Played: {streamStats.chunksPlayed}
@@ -454,13 +539,6 @@ const InterviewPage: React.FC = () => {
 
               {/* Control Buttons */}
               <div className="control-group">
-                <button 
-                  className="btn btn-secondary" 
-                  style={{ width: '100%', marginBottom: '0.5rem' }}
-                >
-                  🎤 Toggle Mic
-                </button>
-                
                 <button 
                   className="btn btn-secondary" 
                   style={{ 
