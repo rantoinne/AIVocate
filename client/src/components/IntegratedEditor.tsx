@@ -1,105 +1,55 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { editor } from 'monaco-editor';
-import monaco from 'monaco-editor';
-
+import React, { useEffect, useRef, useState } from 'react'
+import * as monaco from 'monaco-editor'
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 
 interface IntegratedEditorProps {
-  code: string;
-  language: string;
-  theme?: editor.BuiltinTheme;
-  setCode: (value: string) => void;
-  setLanguage: (lang: string) => void;
+  code: string
+  language: string
+  theme?: monaco.editor.BuiltinTheme
+  setCode: (value: string) => void
+  setLanguage: (lang: string) => void
 } 
 
 const IntegratedEditor: React.FC<IntegratedEditorProps> = ({
-  code = 'console.log("Hello, Monaco!");',
+  code = 'console.log("Hello, Monaco!")',
   language = 'javascript',
   theme = 'vs-dark',
   setCode,
   setLanguage,
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<editor.IStandaloneCodeEditor | undefined>(null);
-  const monacoRef = useRef<typeof monaco>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
 
   useEffect(() => {
-    const loadMonaco = () => {
-      // Check if Monaco is already loaded
-      if (typeof window !== 'undefined' && window.monaco) {
-        monacoRef.current = window.monaco;
-        setIsLoaded(true);
-        return;
-      }
-
-      // Configure Monaco environment for web workers
-      window.MonacoEnvironment = {
-        getWorkerUrl: (moduleId, label) => {
-          if (label === 'json') {
-            return 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/language/json/json.worker.js';
-          }
-          if (label === 'css' || label === 'scss' || label === 'less') {
-            return 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/language/css/css.worker.js';
-          }
-          if (label === 'html' || label === 'handlebars' || label === 'razor') {
-            return 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/language/html/html.worker.js';
-          }
-          if (label === 'typescript' || label === 'javascript') {
-            return 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/language/typescript/ts.worker.js';
-          }
-          return 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.worker.js';
+    // Setup Monaco environment for web workers
+    self.MonacoEnvironment = {
+      getWorker(_, label) {
+        if (label === 'json') {
+          return new jsonWorker()
         }
-      };
-
-      // Load the loader script
-      const loaderScript = document.createElement('script');
-      loaderScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js';
-      loaderScript.onload = () => {
-        // Configure require.js
-        (window as any).require.config({ 
-          paths: { 
-            vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' 
-          },
-          'vs/nls': {
-            availableLanguages: {
-              '*': 'en'
-            }
-          }
-        });
-
-        // Load Monaco editor
-        (window as any).require(['vs/editor/editor.main'], () => {
-          (window as Window).monaco = window.monaco;
-          monacoRef.current = window.monaco;
-          setIsLoaded(true);
-        });
-      };
-
-      loaderScript.onerror = () => {
-        console.error('Failed to load Monaco Editor loader');
-      };
-
-      document.head.appendChild(loaderScript);
-    };
-
-    loadMonaco();
-  
-    return () => {
-      // Cleanup editor on unmount
-      if (editorRef.current) {
-        editorRef.current.dispose();
+        if (label === 'css' || label === 'scss' || label === 'less') {
+          return new cssWorker()
+        }
+        if (label === 'html' || label === 'handlebars' || label === 'razor') {
+          return new htmlWorker()
+        }
+        if (label === 'typescript' || label === 'javascript') {
+          return new tsWorker()
+        }
+        return new editorWorker()
       }
-    };
-  }, []);
-  
-  // Initialize editor when Monaco is loaded
-  useEffect(() => {
-    if (isLoaded && containerRef.current && !editorRef.current) {
-      const monaco = monacoRef.current;
-      
+    }
+
+    // Initialize editor
+    if (containerRef.current && !editorRef.current) {
       // Define custom theme
-      monaco?.editor.defineTheme('myCustomTheme', {
+      monaco.editor.defineTheme('myCustomTheme', {
         base: theme,
         inherit: true,
         rules: [
@@ -111,10 +61,10 @@ const IntegratedEditor: React.FC<IntegratedEditorProps> = ({
           'editor.background': '#1e1e1e',
           'editor.foreground': '#d4d4d4',
         }
-      });
+      })
 
       // Create the editor
-      editorRef.current = monaco?.editor.create(containerRef.current, {
+      editorRef.current = monaco.editor.create(containerRef.current, {
         theme: 'myCustomTheme',
         language,
         tabSize: 2,
@@ -137,44 +87,56 @@ const IntegratedEditor: React.FC<IntegratedEditorProps> = ({
         autoClosingBrackets: 'always',
         foldingStrategy: 'indentation',
         autoSurround: 'languageDefined',
-      });
+      })
 
       // Listen for content changes
-      editorRef.current!.onDidChangeModelContent(() => {
-        setCode(editorRef.current!.getValue());
-      });
+      editorRef.current.onDidChangeModelContent(() => {
+        setCode(editorRef.current!.getValue())
+      })
+
+      setIsLoaded(true)
     }
-  }, [isLoaded]);
+  
+    return () => {
+      // Cleanup editor on unmount
+      if (editorRef.current) {
+        editorRef.current.dispose()
+        editorRef.current = null
+      }
+    }
+  }, [])
 
   // Update editor language when changed
   useEffect(() => {
-    if (editorRef.current && monacoRef.current) {
-      const model = editorRef.current.getModel();
-      monacoRef.current.editor.setModelLanguage(model!, language);
+    if (editorRef.current) {
+      const model = editorRef.current.getModel()
+      if (model) {
+        monaco.editor.setModelLanguage(model, language)
+      }
     }
-  }, [language]);
+  }, [language])
 
   // Update editor content when code changes externally
   useEffect(() => {
     if (editorRef.current && editorRef.current.getValue() !== code) {
-      editorRef.current.setValue(code);
+      editorRef.current.setValue(code)
     }
-  }, [code]);
+  }, [code])
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLanguage?.(e.target.value);
-  };
+    setLanguage?.(e.target.value)
+  }
 
   const handleRunCode = () => {
     // Placeholder: Replace with actual run logic or callback
-    alert('Run code: ' + (editorRef.current?.getValue() || ''));
-  };
+    alert('Run code: ' + (editorRef.current?.getValue() || ''))
+  }
 
   const formatCode = () => {
     if (editorRef.current) {
-      editorRef.current.getAction('editor.action.formatDocument')!.run();
+      editorRef.current.getAction('editor.action.formatDocument')?.run()
     }
-  };
+  }
 
   return (
     <>
@@ -224,7 +186,7 @@ const IntegratedEditor: React.FC<IntegratedEditorProps> = ({
       </div>
       <div ref={containerRef} className="code-editor" style={{ width: '100%', height: '100%' }} />
     </>
-  );
-};
+  )
+}
 
-export default IntegratedEditor;
+export default IntegratedEditor
