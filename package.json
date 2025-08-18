@@ -17,6 +17,7 @@
     "db:migration": "node_modules/.bin/sequelize migration:generate --name"
   },
   "dependencies": {
+    "@ricky0123/vad-web": "^0.0.24",
     "ajv": "^8.17.1",
     "axios": "^1.11.0",
     "cors": "^2.8.5",
