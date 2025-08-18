@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useRequest } from '../hooks/request'
-import { BASE_URL } from '../config/constants'
-import { getLocalStorageKey, LOCAL_STORAGE_KEYS, setLocalStorageKey } from '../utils/localStorage'
+import { useRequest } from '../../hooks/request'
+import { BASE_URL } from '../../config/constants'
+import { LOCAL_STORAGE_KEYS, setLocalStorageKey } from '../../utils/localStorage'
 import './LandingPage.css'
 
 const LandingPage: React.FC = () => {

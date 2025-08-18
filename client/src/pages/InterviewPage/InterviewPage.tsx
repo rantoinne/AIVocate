@@ -1,9 +1,9 @@
 import { useLocation } from 'react-router-dom'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import './InterviewPage.css'
-import { useWebSocket } from '../hooks/socket'
-import { BASE_URL } from '../config/constants'
-import IntegratedEditor from '../components/IntegratedEditor'
+import { useWebSocket } from '../../hooks/socket'
+import { BASE_URL } from '../../config/constants'
+import IntegratedEditor from '../../components/IntegratedEditor'
 
 // PCM Audio Configuration - will be dynamically determined
 const PCM_CONFIG = {
@@ -15,9 +15,9 @@ const PCM_CONFIG = {
 }
 
 interface PCMChunk {
-  data: Float32Array
-  chunkIndex: number
+  chunk: string
   isLast: boolean
+  chunkIndex: number
 }
 
 const InterviewPage: React.FC = () => {
@@ -204,7 +204,7 @@ const InterviewPage: React.FC = () => {
   }, [createPCMAudioBuffer, initAudioContext])
 
   // Process base64 PCM chunk
-  const processPCMChunk = useCallback(async (chunkData: { chunk: string, chunkIndex: number, isLast: boolean }) => {
+  const processPCMChunk = useCallback(async (chunkData: PCMChunk) => {
     const { chunk, chunkIndex, isLast } = chunkData
 
     try {
