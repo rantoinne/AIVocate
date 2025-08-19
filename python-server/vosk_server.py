@@ -12,7 +12,7 @@ from pathlib import Path
 try:
     from dynamic_vocabulary_manager import DynamicVocabularyManager
     from intelligent_corrector import IntelligentCorrector
-    SMART_FEATURES_AVAILABLE = True
+    SMART_FEATURES_AVAILABLE = False
 except ImportError as e:
     SMART_FEATURES_AVAILABLE = False
     DynamicVocabularyManager = None

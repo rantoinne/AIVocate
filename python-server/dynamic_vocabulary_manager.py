@@ -213,7 +213,6 @@ class DynamicVocabularyManager:
     def search_similar_terms(self, term, limit=5):
         """Find similar terms in vocabulary"""
         from rapidfuzz import process, fuzz
-        
         matches = process.extract(
             term.lower(),
             self.tech_terms,

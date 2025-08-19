@@ -3,6 +3,7 @@ version: '3.8'
 services:
   vosk-stt:
     build: .
+    container_name: vosk-stt
     ports:
       - "8765:8765"
     volumes:
@@ -10,6 +11,8 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
+    networks:
+      - shared-network
     deploy:
       resources:
         limits:
@@ -21,3 +24,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+networks:
+  shared-network:
+    external: true

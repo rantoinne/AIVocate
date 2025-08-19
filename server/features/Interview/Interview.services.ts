@@ -18,3 +18,27 @@ export const generateAudio = async (input: string) => {
 
   return audio
 }
+
+export const connectToSTTSocket = async (localServerWs: WebSocket): Promise<WebSocket> => {
+  const webSocket = new WebSocket('ws://vosk-stt:8765')
+
+  webSocket.on('open', () => {
+    console.log('Connected to Vosk-stt')
+  })
+
+  webSocket.on('message', (data: WebSocket.RawData) => {
+    const message = JSON.parse(data.toString())
+    console.log('Received message:', message.type)
+    if (message.type === 'final') {
+      /**
+       * TODOs
+       * 1.Save to DB
+       * 2.Get completion
+       * 3.Generate Audio
+       * 4.sendToWS(localServerWs, 'ai_message', audio chunks similar to greeting message)
+       *  */
+    }
+  })
+
+  return webSocket
+}

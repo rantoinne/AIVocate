@@ -40,7 +40,7 @@ const LandingPage: React.FC = () => {
         alert('Please enable microphone and audio permissions to continue with the interview')
       }
     }
-    func()
+    // func()
   }, [])
   
   return (
