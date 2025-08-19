@@ -3,72 +3,73 @@ import Interview from './Interview.js'
 import { generateId } from '../../utils/strings.js'
 import { reqType, resType } from '../../config/types.js'
 import { asyncWrapper, asyncWsWrapper } from '../../utils/asyncWrapper.js'
-import { generateAudio, sendViaWS } from './Interview.services.js'
+import { connectToSTTSocket, generateAudio, sendViaWS } from './Interview.services.js'
 import { AUDIO_CHUNK_SIZE } from '../../utils/constants.js'
 
 const interviewSession = async (ws: WebSocket, req: reqType) => {
   const interviewSessionId = req.params.sessionId
   console.log('WebSocket connected for session:', interviewSessionId)
-  
+
+  const voskWebSocket = await connectToSTTSocket(ws)
   // Send welcome message
   sendViaWS(ws, 'chat', 'Hello! Connected to interview session.')
 
   // const audio = await generateAudio('Hello! Interview will begin shortly')
-  const audio = await generateAudio('Hello!')
-  const bufferedAudio = Buffer.from(await audio.arrayBuffer())
+  // const audio = await generateAudio('Hello!')
+  // const bufferedAudio = Buffer.from(await audio.arrayBuffer())
 
-  const totalChunks = Math.ceil(bufferedAudio.length / AUDIO_CHUNK_SIZE);
+  // const totalChunks = Math.ceil(bufferedAudio.length / AUDIO_CHUNK_SIZE);
   
-  const startTime = performance.now()
-  sendViaWS(
-    ws,
-    'tts_start',
-    {
-      totalChunks,
-      format: 'pcm',
-      totalSize: bufferedAudio.length,
-    }
-  )
+  // const startTime = performance.now()
+  // sendViaWS(
+  //   ws,
+  //   'tts_start',
+  //   {
+  //     totalChunks,
+  //     format: 'pcm',
+  //     totalSize: bufferedAudio.length,
+  //   }
+  // )
 
-  let totalLatency = 0
-  for (let i = 0; i < totalChunks; i++) {
-    const chunkStartTime = performance.now()
+  // let totalLatency = 0
+  // for (let i = 0; i < totalChunks; i++) {
+  //   const chunkStartTime = performance.now()
     
-    const start = i * AUDIO_CHUNK_SIZE
-    const end = Math.min(start + AUDIO_CHUNK_SIZE, bufferedAudio.length)
-    const chunk = bufferedAudio.subarray(start, end)
+  //   const start = i * AUDIO_CHUNK_SIZE
+  //   const end = Math.min(start + AUDIO_CHUNK_SIZE, bufferedAudio.length)
+  //   const chunk = bufferedAudio.subarray(start, end)
     
-    sendViaWS(
-      ws,
-      'tts_chunk',
-      {
-        chunkIndex: i,
-        isLast: i === totalChunks - 1,
-        chunk: chunk.toString('base64'),
-      }
-    )
+  //   sendViaWS(
+  //     ws,
+  //     'tts_chunk',
+  //     {
+  //       chunkIndex: i,
+  //       isLast: i === totalChunks - 1,
+  //       chunk: chunk.toString('base64'),
+  //     }
+  //   )
 
-    const chunkLatency = performance.now() - chunkStartTime
-    totalLatency += chunkLatency
+  //   const chunkLatency = performance.now() - chunkStartTime
+  //   totalLatency += chunkLatency
 
-    // Small delay to prevent overwhelming the connection
-    await new Promise(resolve => setTimeout(resolve, 5))
-  }
+  //   // Small delay to prevent overwhelming the connection
+  //   await new Promise(resolve => setTimeout(resolve, 5))
+  // }
 
-  const totalTime = performance.now() - startTime
+  // const totalTime = performance.now() - startTime
   
-  sendViaWS(
-    ws,
-    'tts_complete',
-    { 
-      totalChunks,
-      metrics: {
-        totalTimeMs: Math.round(totalTime),
-        averageChunkLatencyMs: Math.round(totalLatency / totalChunks),
-        totalLatencyMs: Math.round(totalLatency)
-      }
-    }
-  )
+  // sendViaWS(
+  //   ws,
+  //   'tts_complete',
+  //   { 
+  //     totalChunks,
+  //     metrics: {
+  //       totalTimeMs: Math.round(totalTime),
+  //       averageChunkLatencyMs: Math.round(totalLatency / totalChunks),
+  //       totalLatencyMs: Math.round(totalLatency)
+  //     }
+  //   }
+  // )
 
   // Set up ping/pong mechanism to keep connection alive
   let pingInterval: NodeJS.Timeout
@@ -91,27 +92,35 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
   // Handle messages from client
   ws.on('message', (data) => {
     try {
-      const message = JSON.parse(data.toString())
-      console.log('Received message:', message)
-      
-      // Handle ping messages
-      if (message.type === 'ping') {
-        // Respond with pong
-        ws.send(JSON.stringify({ type: 'pong' }))
-        return
+      const isMessageOfTypeBuffer = Buffer.isBuffer(data)
+      if (isMessageOfTypeBuffer) {
+        voskWebSocket.send(data)
+      } else {
+        const message = JSON.parse(data.toString())
+        console.log('LAKSJDLAKSJDLAKSJD', message)
+        
+        // Handle ping messages
+        switch (message.type) {
+          case 'ping':
+            // Respond with pong
+            ws.send(JSON.stringify({ type: 'pong' }))
+            break
+            
+          case 'chat':
+            // Echo the message back for now
+            ws.send(JSON.stringify({
+              type: 'chat',
+              message: `Echo: ${message.message}`
+            }))
+            break
+
+          default:
+            console.log('Unknown message type:', message.type)
+            break
+        }
+        
+        console.log('Unknown message type:', message.type)
       }
-      
-      // Handle chat messages
-      if (message.type === 'chat') {
-        // Echo the message back for now
-        ws.send(JSON.stringify({
-          type: 'chat',
-          message: `Echo: ${message.message}`
-        }))
-        return
-      }
-      
-      console.log('Unknown message type:', message.type)
     } catch (err) {
       console.error('Error parsing message:', err)
     }

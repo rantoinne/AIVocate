@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import './InterviewPage.css'
-import { useWebSocket } from '../../hooks/socket'
+import { SocketMessage, useWebSocket } from '../../hooks/socket'
 import { BASE_URL } from '../../config/constants'
 import IntegratedEditor from '../../components/IntegratedEditor'
 
@@ -270,15 +270,53 @@ const InterviewPage: React.FC = () => {
     console.log('Audio state reset for new stream')
   }, [initAudioContext])
 
+  const initialiseClientAudioStreaming = async (ws: WebSocket): Promise<void> => {
+    const audioStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: 16000,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true
+      }
+    })
+    
+    // Create audio context for processing
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
+        sampleRate: 16000
+    })
+    
+    const source = audioContext.createMediaStreamSource(audioStream)
+    
+    // Create processor for audio chunks
+    const processor = audioContext.createScriptProcessor(4096, 1, 1)
+    
+    processor.onaudioprocess = (event) => {
+      const inputBuffer = event.inputBuffer.getChannelData(0)
+            
+      // Convert float32 to int16
+      const int16Buffer = new Int16Array(inputBuffer.length)
+      for (let i = 0; i < inputBuffer.length; i++) {
+          int16Buffer[i] = Math.max(-32768, Math.min(32767, inputBuffer[i] * 32768))
+      }
+      
+      // Send to WebSocket
+      ws.send(int16Buffer.buffer)
+    }
+
+    source.connect(processor)
+    processor.connect(audioContext.destination)
+  }
+
   // WebSocket message handler
   const { connected } = useWebSocket({
     url: `${window.location.protocol === 'https:' ? 'wss://' : 'ws://'}${window.location.host}${BASE_URL}interview-session/${sessionId}`,
-    onMessage: async (msg) => {
+    onMessage: async (msg: SocketMessage, ws: WebSocket) => {
       console.log('WebSocket message:', { type: msg.type, timestamp: new Date().toISOString() })
       
       switch (msg.type) {
         case 'chat':
           console.log('Chat message:', msg.message)
+          await initialiseClientAudioStreaming(ws)
           break
 
         case 'tts_start':

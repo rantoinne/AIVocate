@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from "react"
 
-type Message =
+export type SocketMessage =
   | { type: "ping" }
   | { type: "pong" }
   | { type: "chat"; message: string }
@@ -15,7 +15,7 @@ type OutgoingMessage =
 
 interface UseWebSocketOptions {
   url: string
-  onMessage: (msg: Message) => Promise<void>
+  onMessage: (msg: SocketMessage, ws: WebSocket) => Promise<void>
   heartbeatInterval?: number
   reconnectMaxDelay?: number
   reconnectAttempts?: number
@@ -33,7 +33,7 @@ interface UseWebSocketReturn {
  *
  * @param {UseWebSocketOptions} options - WebSocket options.
  * @param {string} options.url - URL of the WebSocket server.
- * @param {(msg: Message) => void} options.onMessage - Callback for incoming messages.
+ * @param {(msg: SocketMessage, ws: WebSocket) => void} options.onMessage - Callback for incoming messages.
  * @param {number} [options.heartbeatInterval] - Interval in ms for sending a heartbeat.
  * @param {number} [options.reconnectMaxDelay] - Maximum delay in ms between reconnect attempts.
  * @param {number} [options.reconnectAttempts] - Maximum number of reconnect attempts.
@@ -58,7 +58,7 @@ export const useWebSocket = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const messageQueue = useRef<OutgoingMessage[]>([])
   const isManuallyDisconnected = useRef(false)
-  const onMessageRef = useRef<(msg: Message) => Promise<void>>(onMessage)
+  const onMessageRef = useRef<(msg: SocketMessage, ws: WebSocket) => Promise<void>>(onMessage)
   const strictModeFirstRender = useRef<boolean>(true)
   const prevConnectionParams = useRef({ url, authToken })
 
@@ -108,6 +108,7 @@ export const useWebSocket = ({
     
     try {
       const ws = new WebSocket(fullUrl)
+      ws.binaryType = 'arraybuffer'
       wsRef.current = ws
 
       ws.onopen = () => {
@@ -125,10 +126,10 @@ export const useWebSocket = ({
 
       ws.onmessage = async (event) => {
         try {
-          const parsed: Message = JSON.parse(event.data)
+          const parsed: SocketMessage = JSON.parse(event.data)
           if (parsed.type !== 'pong') {
             // Use the ref to get the latest callback
-            await onMessageRef.current(parsed)
+            await onMessageRef.current(parsed, wsRef.current!)
           }
         } catch (err) {
           console.error("Failed to parse WebSocket message", err)
