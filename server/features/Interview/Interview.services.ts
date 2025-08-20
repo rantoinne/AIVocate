@@ -28,8 +28,8 @@ export const connectToSTTSocket = async (localServerWs: WebSocket): Promise<WebS
 
   webSocket.on('message', (data: WebSocket.RawData) => {
     const message = JSON.parse(data.toString())
-    console.log('Received message:', message.type)
-    if (message.type === 'final') {
+    if (message.type === 'partial') {
+      console.log('Received message:', message)
       /**
        * TODOs
        * 1.Save to DB

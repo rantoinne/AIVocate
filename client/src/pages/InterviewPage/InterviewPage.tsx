@@ -4,6 +4,7 @@ import './InterviewPage.css'
 import { SocketMessage, useWebSocket } from '../../hooks/socket'
 import { BASE_URL } from '../../config/constants'
 import IntegratedEditor from '../../components/IntegratedEditor'
+import { audioProcessorCode } from '../../utils/audioProcessorWorklet'
 
 // PCM Audio Configuration - will be dynamically determined
 const PCM_CONFIG = {
@@ -271,6 +272,10 @@ const InterviewPage: React.FC = () => {
   }, [initAudioContext])
 
   const initialiseClientAudioStreaming = async (ws: WebSocket): Promise<void> => {
+    const blob = new Blob([audioProcessorCode], { type: 'application/javascript' })
+    const processorUrl = URL.createObjectURL(blob)
+
+    
     const audioStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         sampleRate: 16000,
@@ -284,27 +289,17 @@ const InterviewPage: React.FC = () => {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
         sampleRate: 16000
     })
-    
+
+    await audioContext.audioWorklet.addModule(processorUrl)
     const source = audioContext.createMediaStreamSource(audioStream)
+    const processorNode = new AudioWorkletNode(audioContext, 'audio-processor')
     
-    // Create processor for audio chunks
-    const processor = audioContext.createScriptProcessor(4096, 1, 1)
-    
-    processor.onaudioprocess = (event) => {
-      const inputBuffer = event.inputBuffer.getChannelData(0)
-            
-      // Convert float32 to int16
-      const int16Buffer = new Int16Array(inputBuffer.length)
-      for (let i = 0; i < inputBuffer.length; i++) {
-          int16Buffer[i] = Math.max(-32768, Math.min(32767, inputBuffer[i] * 32768))
-      }
-      
-      // Send to WebSocket
-      ws.send(int16Buffer.buffer)
+    processorNode.port.onmessage = (event) => {
+      // Send to WebSocket (same as before)
+      ws.send(event.data)
     }
 
-    source.connect(processor)
-    processor.connect(audioContext.destination)
+    source.connect(processorNode);
   }
 
   // WebSocket message handler
