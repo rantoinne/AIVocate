@@ -295,7 +295,6 @@ const InterviewPage: React.FC = () => {
     const processorNode = new AudioWorkletNode(audioContext, 'audio-processor')
     
     processorNode.port.onmessage = (event) => {
-      // Send to WebSocket (same as before)
       ws.send(event.data)
     }
 
