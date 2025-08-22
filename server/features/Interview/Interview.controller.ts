@@ -97,7 +97,6 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
         voskWebSocket.send(data)
       } else {
         const message = JSON.parse(data.toString())
-        console.log('LAKSJDLAKSJDLAKSJD', message)
         
         // Handle ping messages
         switch (message.type) {
