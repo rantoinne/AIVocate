@@ -17,7 +17,7 @@ interface InterviewAttributes {
   endedAt: Date | null
   durationSeconds: number | null
   createdAt: Date
-  session_id: string
+  sessionId: string
   updatedAt: Date
   deletedAt: Date
 }
@@ -40,7 +40,7 @@ class Interview extends Model<InterviewAttributes, InterviewCreationAttributes> 
   public endedAt!: Date | null
   public durationSeconds!: number | null
   public createdAt!: Date
-  public session_id!: string
+  public sessionId!: string
   public updatedAt!: Date
   public deletedAt!: Date
 }
@@ -92,7 +92,7 @@ Interview.init(
       type: DataTypes.JSONB,
       defaultValue: {},
     },
-    session_id: {
+    sessionId: {
       type: DataTypes.STRING(12),
       defaultValue: {},
     },
