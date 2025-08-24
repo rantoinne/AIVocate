@@ -5,12 +5,15 @@ import Interview from '../Interview/Interview.js'
 // Define the attributes for the AIConversation model
 interface AIConversationAttributes {
   id: string
-  interviewId: string
-  speaker: string
+  interviewId: number
+  speaker: 'user' | 'ai_interviewer'
   message: string
   messageType: string
   metadata: object
   timestamp: Date
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date
 }
 
 // Define the creation attributes (id, metadata, timestamp are auto-generated or optional)
@@ -19,12 +22,15 @@ interface AIConversationCreationAttributes extends Optional<AIConversationAttrib
 // Define the AIConversation model class
 class AIConversation extends Model<AIConversationAttributes, AIConversationCreationAttributes> implements AIConversationAttributes {
   public id!: string
-  public interviewId!: string
-  public speaker!: string
+  public interviewId!: number
+  public speaker!: AIConversationAttributes['speaker']
   public message!: string
   public messageType!: string
   public metadata!: object
   public timestamp!: Date
+  public createdAt!: Date
+  public updatedAt!: Date
+  public deletedAt!: Date
 }
 
 // Initialize the AIConversation model
@@ -65,6 +71,18 @@ AIConversation.init(
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    }
   },
   {
     sequelize,
@@ -72,6 +90,7 @@ AIConversation.init(
     modelName: 'AIConversation',
     timestamps: true,
     underscored: true,
+    paranoid: true,
   }
 )
 

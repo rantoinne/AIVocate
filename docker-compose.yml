@@ -31,6 +31,8 @@ services:
         echo 'yarn ran' &&
         yarn back:build &&
         echo 'after build' &&
+        yarn db:migrate &&
+        echo 'after migrate' &&
         yarn dev
     ports:
       - 8000:8000
