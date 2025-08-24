@@ -44,6 +44,18 @@ export default {
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,
       },
+      created_at: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+      },
+      deleted_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      }
     })
   },
 

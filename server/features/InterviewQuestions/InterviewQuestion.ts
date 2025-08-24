@@ -15,10 +15,12 @@ interface InterviewQuestionAttributes {
   score: number | null
   completedAt: Date | null
   createdAt: Date
+  updatedAt: Date
+  deletedAt: Date
 }
 
 // Define the creation attributes (id, timeSpentSeconds, userCode, aiFeedback, score, completedAt, createdAt are auto-generated or optional)
-interface InterviewQuestionCreationAttributes extends Optional<InterviewQuestionAttributes, 'id' | 'timeSpentSeconds' | 'userCode' | 'aiFeedback' | 'score' | 'completedAt' | 'createdAt'> {}
+interface InterviewQuestionCreationAttributes extends Optional<InterviewQuestionAttributes, 'id' | 'timeSpentSeconds' | 'userCode' | 'aiFeedback' | 'score' | 'completedAt' | 'createdAt' | 'updatedAt' | 'deletedAt'> {}
 
 // Define the InterviewQuestion model class
 class InterviewQuestion extends Model<InterviewQuestionAttributes, InterviewQuestionCreationAttributes> implements InterviewQuestionAttributes {
@@ -32,6 +34,8 @@ class InterviewQuestion extends Model<InterviewQuestionAttributes, InterviewQues
   public score!: number | null
   public completedAt!: Date | null
   public createdAt!: Date
+  public updatedAt!: Date
+  public deletedAt!: Date
 }
 
 // Initialize the InterviewQuestion model
@@ -98,6 +102,16 @@ InterviewQuestion.init(
       defaultValue: DataTypes.NOW,
       field: 'created_at',
     },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'updated_at',
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'deleted_at',
+    }
   },
   {
     sequelize,
@@ -105,6 +119,7 @@ InterviewQuestion.init(
     modelName: 'InterviewQuestion',
     timestamps: true,
     underscored: true,
+    paranoid: true,
     indexes: [
       {
         unique: true,

@@ -40,10 +40,18 @@ export default {
         type: Sequelize.DATE,
         allowNull: true,
       },
+      created_at: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+      },
       updated_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,
       },
+      deleted_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      }
     })
 
     // Add unique constraint for user_id and skill_category combination

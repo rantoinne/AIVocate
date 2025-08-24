@@ -13,6 +13,9 @@ interface CodeSubmissionAttributes {
   executionTimeMs: number | null
   memoryUsageKb: number | null
   submittedAt: Date
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date
 }
 
 // Define the creation attributes (id, executionResult, testResults, executionTimeMs, memoryUsageKb, submittedAt are auto-generated or optional)
@@ -29,6 +32,9 @@ class CodeSubmission extends Model<CodeSubmissionAttributes, CodeSubmissionCreat
   public executionTimeMs!: number | null
   public memoryUsageKb!: number | null
   public submittedAt!: Date
+  public createdAt!: Date
+  public updatedAt!: Date
+  public deletedAt!: Date
 }
 
 // Initialize the CodeSubmission model
@@ -81,6 +87,21 @@ CodeSubmission.init(
       defaultValue: DataTypes.NOW,
       field: 'submitted_at',
     },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'created_at',
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'updated_at',
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'deleted_at',
+    }
   },
   {
     sequelize,
@@ -88,6 +109,7 @@ CodeSubmission.init(
     modelName: 'CodeSubmission',
     timestamps: true,
     underscored: true,
+    paranoid: true,
   }
 )
 

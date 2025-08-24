@@ -11,6 +11,7 @@ interface UserAttributes {
   skillLevel: string
   createdAt: Date
   updatedAt: Date
+  deletedAt: Date
 }
 
 // Define the creation attributes (id, createdAt, updatedAt are auto-generated)
@@ -26,6 +27,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public skillLevel!: string
   public createdAt!: Date
   public updatedAt!: Date
+  public deletedAt!: Date
 }
 
 // Initialize the User model
@@ -70,6 +72,11 @@ User.init(
       defaultValue: DataTypes.NOW,
       field: 'updated_at',
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'deleted_at',
+    }
   },
   {
     sequelize,
@@ -77,6 +84,7 @@ User.init(
     modelName: 'User',
     timestamps: true,
     underscored: true,
+    paranoid: true,
   }
 )
 

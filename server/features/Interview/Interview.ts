@@ -4,7 +4,7 @@ import User from '../Users/User.js'
 
 // Define the attributes for the Interview model
 interface InterviewAttributes {
-  id: string
+  id: number
   userId: string
   title: string
   difficultyLevel: string
@@ -18,6 +18,8 @@ interface InterviewAttributes {
   durationSeconds: number | null
   createdAt: Date
   session_id: string
+  updatedAt: Date
+  deletedAt: Date
 }
 
 // Define the creation attributes (id, createdAt, startedAt, endedAt, durationSeconds are auto-generated or optional)
@@ -25,7 +27,7 @@ interface InterviewCreationAttributes extends Optional<InterviewAttributes, 'id'
 
 // Define the Interview model class
 class Interview extends Model<InterviewAttributes, InterviewCreationAttributes> implements InterviewAttributes {
-  public id!: string
+  public id!: number
   public userId!: string
   public title!: string
   public difficultyLevel!: string
@@ -39,6 +41,8 @@ class Interview extends Model<InterviewAttributes, InterviewCreationAttributes> 
   public durationSeconds!: number | null
   public createdAt!: Date
   public session_id!: string
+  public updatedAt!: Date
+  public deletedAt!: Date
 }
 
 // Initialize the Interview model
@@ -117,6 +121,16 @@ Interview.init(
       defaultValue: DataTypes.NOW,
       field: 'created_at',
     },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'updated_at',
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'deleted_at',
+    }
   },
   {
     sequelize,
@@ -124,6 +138,7 @@ Interview.init(
     modelName: 'Interview',
     timestamps: true,
     underscored: true,
+    paranoid: true,
   }
 )
 
