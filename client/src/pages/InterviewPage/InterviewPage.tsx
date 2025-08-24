@@ -25,15 +25,23 @@ const InterviewPage: React.FC = () => {
   const location = useLocation()
   const sessionId = location.state?.sessionId
 
-  const [code, setCode] = useState('')
-  const [language, setLanguage] = useState('javascript')
+  const [code, setCode] = useState<string>('')
+  const [language, setLanguage] = useState<string>('javascript')
   // only as a flag to know when does AudioContext start playing the audio
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [streamStats, setStreamStats] = useState({
+  const [isPlaying, setIsPlaying] = useState<boolean>(false)
+  const [streamStats, setStreamStats] = useState<{
+    chunksReceived: number
+    chunksPlayed: number
+    totalDuration: number
+  }>({
     chunksReceived: 0,
     chunksPlayed: 0,
     totalDuration: 0
   })
+  const [transcripts, setTranscripts] = useState<{
+    speaker: string
+    message: string
+  }[]>([])
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const timeLeft = useRef(25 * 60 + 30)
@@ -312,10 +320,11 @@ const InterviewPage: React.FC = () => {
           console.log('Chat message:', msg.message)
           await initialiseClientAudioStreaming(ws)
           break
-
-        case 'tts_start':
-          console.log('TTS stream starting:', msg.message)
-          await resetAudioState()
+          
+          case 'tts_start':
+            console.log('TTS stream starting:', msg.message)
+            setTranscripts(prev => [...prev, { speaker: 'ai', message: JSON.parse(msg.message).text }])
+            await resetAudioState()
           currentStreamIdRef.current = Date.now().toString()
           break
         
@@ -341,6 +350,16 @@ const InterviewPage: React.FC = () => {
           setTimeout(() => {
             setIsPlaying(false)
           }, 1000)
+          break
+
+        case 'user_transcript':
+          console.log('User transcript:', msg.message)
+          setTranscripts(prev => [...prev, { speaker: 'user', message: msg.message }])
+          break
+
+        case 'ai_transcript':
+          console.log('AI transcript:', msg.message)
+          setTranscripts(prev => [...prev, { speaker: 'ai', message: msg.message }])
           break
           
         default:
@@ -440,14 +459,12 @@ const InterviewPage: React.FC = () => {
                   <span className="question-difficulty difficulty-easy">Easy</span>
                 </div>
                 <div className="chat-history">
-                  <div className="chat-message chat-ai">
-                    <div className="chat-sender">AI Interviewer</div>
-                    <div>Great! Now can you explain the time complexity of your solution?</div>
-                  </div>
-                  <div className="chat-message chat-user">
-                    <div className="chat-sender">You</div>
-                    <div>The time complexity is O(n) since we iterate through the array once.</div>
-                  </div>
+                  {transcripts.map((item, index) => (
+                    <div key={index} className={`chat-message chat-${item.speaker}`}>
+                      <div className="chat-sender">{item.speaker === 'user' ? 'You' : 'AI Interviewer'}</div>
+                      <div>{item.message}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
