@@ -7,69 +7,16 @@ import { connectToSTTSocket, generateAudio, sendViaWS } from './Interview.servic
 import { AUDIO_CHUNK_SIZE } from '../../utils/constants.js'
 
 const interviewSession = async (ws: WebSocket, req: reqType) => {
+  const ctx: { transcripts: { role: string; content: string; }[] } = {
+    transcripts: []
+  }
+  
   const interviewSessionId = req.params.sessionId
   console.log('WebSocket connected for session:', interviewSessionId)
 
-  const voskWebSocket = await connectToSTTSocket(ws)
+  const voskWebSocket = await connectToSTTSocket(ws, interviewSessionId, ctx)
   // Send welcome message
   sendViaWS(ws, 'chat', 'Hello! Connected to interview session.')
-
-  // const audio = await generateAudio('Hello! Interview will begin shortly')
-  // const audio = await generateAudio('Hello!')
-  // const bufferedAudio = Buffer.from(await audio.arrayBuffer())
-
-  // const totalChunks = Math.ceil(bufferedAudio.length / AUDIO_CHUNK_SIZE);
-  
-  // const startTime = performance.now()
-  // sendViaWS(
-  //   ws,
-  //   'tts_start',
-  //   {
-  //     totalChunks,
-  //     format: 'pcm',
-  //     totalSize: bufferedAudio.length,
-  //   }
-  // )
-
-  // let totalLatency = 0
-  // for (let i = 0; i < totalChunks; i++) {
-  //   const chunkStartTime = performance.now()
-    
-  //   const start = i * AUDIO_CHUNK_SIZE
-  //   const end = Math.min(start + AUDIO_CHUNK_SIZE, bufferedAudio.length)
-  //   const chunk = bufferedAudio.subarray(start, end)
-    
-  //   sendViaWS(
-  //     ws,
-  //     'tts_chunk',
-  //     {
-  //       chunkIndex: i,
-  //       isLast: i === totalChunks - 1,
-  //       chunk: chunk.toString('base64'),
-  //     }
-  //   )
-
-  //   const chunkLatency = performance.now() - chunkStartTime
-  //   totalLatency += chunkLatency
-
-  //   // Small delay to prevent overwhelming the connection
-  //   await new Promise(resolve => setTimeout(resolve, 5))
-  // }
-
-  // const totalTime = performance.now() - startTime
-  
-  // sendViaWS(
-  //   ws,
-  //   'tts_complete',
-  //   { 
-  //     totalChunks,
-  //     metrics: {
-  //       totalTimeMs: Math.round(totalTime),
-  //       averageChunkLatencyMs: Math.round(totalLatency / totalChunks),
-  //       totalLatencyMs: Math.round(totalLatency)
-  //     }
-  //   }
-  // )
 
   // Set up ping/pong mechanism to keep connection alive
   let pingInterval: NodeJS.Timeout
@@ -158,7 +105,7 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
 
 const createInterviewSession = async (req: reqType, res: resType) => {
   // Keeping it static for now. Will ingest from user later
-  const USER_ID = '2'
+  const USER_ID = '1'
   const interview = await Interview.create({
     userId: USER_ID,
     title: 'title',
@@ -172,9 +119,8 @@ const createInterviewSession = async (req: reqType, res: resType) => {
     endedAt: new Date(),
     createdAt: new Date(),
     // updatedAt: new Date(),
-    session_id: generateId()
+    sessionId: generateId()
   })
-
   res.json({ interview })
 }
 

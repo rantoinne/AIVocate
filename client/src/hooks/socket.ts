@@ -8,6 +8,8 @@ export type SocketMessage =
   | { type: "tts_start"; message: string }
   | { type: "tts_chunk"; message: string }
   | { type: "tts_complete"; message: string }
+  | { type: "user_transcript"; message: string }
+  | { type: "ai_transcript"; message: string }
 
 type OutgoingMessage =
   | { type: "chat"; message: string }
