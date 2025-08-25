@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Processing Flow Diagram</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 40px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .diagram-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .thread-section {
+            border: 3px solid;
+            border-radius: 15px;
+            padding: 25px;
+            position: relative;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .main-thread {
+            border-color: #3498db;
+            background: linear-gradient(135deg, #e3f2fd, #f8fdff);
+        }
+
+        .audio-thread {
+            border-color: #e74c3c;
+            background: linear-gradient(135deg, #ffebee, #fff5f5);
+        }
+
+        .thread-title {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .main-thread .thread-title {
+            color: #3498db;
+            border: 2px solid #3498db;
+        }
+
+        .audio-thread .thread-title {
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+        }
+
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .component {
+            flex: 1;
+            min-width: 180px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            border: 2px solid #f0f0f0;
+        }
+
+        .component:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .component-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .component-desc {
+            font-size: 12px;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .microphone {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            border-color: #ff6b6b;
+        }
+
+        .media-stream {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            border-color: #26de81;
+        }
+
+        .audio-context {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            border-color: #ff8a80;
+        }
+
+        .worklet-node {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #5a67d8;
+        }
+
+        .worklet-node .component-title,
+        .worklet-node .component-desc {
+            color: white;
+        }
+
+        .processor {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+            border-color: #e74c3c;
+        }
+
+        .websocket {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            border-color: #00b894;
+        }
+
+        .arrow {
+            font-size: 24px;
+            color: #3498db;
+            font-weight: bold;
+            align-self: center;
+            animation: pulse 2s infinite;
+        }
+
+        .vertical-arrow {
+            font-size: 36px;
+            color: #e74c3c;
+            text-align: center;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .data-format {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+
+        .scope-highlight {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: #e67e22;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .message-passing {
+            background: #fff3cd;
+            border: 2px dashed #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .message-passing::before {
+            content: "🔄";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 5px;
+            font-size: 20px;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background: #3498db;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎙️ Audio Processing Flow: Microphone to WebSocket via AudioWorklet</h1>
+        
+        <div class="diagram-container">
+            <!-- Main Thread Section -->
+            <div class="thread-section main-thread">
+                <div class="thread-title">🧵 Main Thread (UI Thread)</div>
+                
+                <div class="flow">
+                    <div class="component microphone">
+                        <div class="step-number">1</div>
+                        <div class="component-title">🎤 Microphone</div>
+                        <div class="component-desc">Hardware captures sound waves</div>
+                        <div class="data-format">Raw analog audio</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component media-stream">
+                        <div class="step-number">2</div>
+                        <div class="component-title">MediaStream</div>
+                        <div class="component-desc">getUserMedia() creates digital stream</div>
+                        <div class="data-format">16kHz, mono, Float32</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component audio-context">
+                        <div class="step-number">3</div>
+                        <div class="component-title">AudioContext</div>
+                        <div class="component-desc">Creates MediaStreamSource node</div>
+                        <div class="data-format">Web Audio Graph</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component worklet-node">
+                        <div class="step-number">4</div>
+                        <div class="component-title">AudioWorkletNode</div>
+                        <div class="component-desc">Proxy to audio thread processor</div>
+                        <div class="data-format">Main thread interface</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Passing -->
+            <div class="vertical-arrow">⬇️</div>
+            <div class="message-passing">
+                <strong>Audio Graph Connection:</strong> source.connect(processorNode)<br>
+                Audio flows through Web Audio graph to AudioWorkletNode
+            </div>
+
+            <!-- Audio Thread Section -->
+            <div class="thread-section audio-thread">
+                <div class="thread-title">🎵 Audio Thread (AudioWorkletGlobalScope)</div>
+                <div class="scope-highlight">Isolated Scope</div>
+                
+                <div class="flow">
+                    <div class="component processor">
+                        <div class="step-number">5</div>
+                        <div class="component-title">AudioWorkletProcessor</div>
+                        <div class="component-desc">process() method called every ~3ms</div>
+                        <div class="data-format">128 samples/chunk</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component processor">
+                        <div class="step-number">6</div>
+                        <div class="component-title">Data Conversion</div>
+                        <div class="component-desc">Float32 (-1.0 to 1.0) → Int16 (-32768 to 32767)</div>
+                        <div class="data-format">sample * 32768</div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="component processor">
+                        <div class="step-number">7</div>
+                        <div class="component-title">Message Port</div>
+                        <div class="component-desc">port.postMessage(buffer)</div>
+                        <div class="data-format">ArrayBuffer transfer</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Passing Back -->
+            <div class="vertical-arrow">⬇️</div>
+            <div class="message-passing">
+                <strong>Message Passing:</strong> port.onmessage receives ArrayBuffer<br>
+                Data travels from audio thread back to main thread
+            </div>
+
+            <!-- Final Step -->
+            <div class="thread-section main-thread">
+                <div class="thread-title">🧵 Main Thread (Continued)</div>
+                
+                <div class="flow">
+                    <div class="component websocket">
+                        <div class="step-number">8</div>
+                        <div class="component-title">🌐 WebSocket</div>
+                        <div class="component-desc">ws.send(event.data) to Vosk</div>
+                        <div class="data-format">Binary ArrayBuffer → Network</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #ff9a9e, #fecfef);"></div>
+                <span><strong>Hardware:</strong> Physical microphone</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #a8edea, #fed6e3);"></div>
+                <span><strong>Browser API:</strong> MediaStream, AudioContext</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                <span><strong>AudioWorklet:</strong> Modern processing system</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #fa709a, #fee140);"></div>
+                <span><strong>Processing:</strong> Data conversion & handling</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #43e97b, #38f9d7);"></div>
+                <span><strong>Network:</strong> WebSocket to external service</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #e8f4f8; border-radius: 15px;">
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">🔑 Key Concepts:</h3>
+            <ul style="color: #34495e; line-height: 1.8;">
+                <li><strong>AudioWorkletGlobalScope:</strong> Isolated JavaScript environment on audio thread - no access to DOM or main thread variables</li>
+                <li><strong>AudioWorkletNode:</strong> Lives on main thread, acts as a proxy to communicate with the processor</li>
+                <li><strong>Message Passing:</strong> The only way to communicate between main thread and audio thread</li>
+                <li><strong>128 Sample Chunks:</strong> Audio is processed in small, consistent chunks for low latency</li>
+                <li><strong>Thread Isolation:</strong> Audio processing never blocks the UI, ensuring smooth performance</li>
+                <li><strong>Same Output:</strong> Your WebSocket receives identical binary data as the old approach</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
