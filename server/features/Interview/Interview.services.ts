@@ -1,9 +1,10 @@
 import WebSocket from 'ws'
-import { openai } from "../../llm.js"
+import { INTERVIEWER_PROMPT, openai } from "../../llm.js"
 import AIConversation from '../AIConversations/AIConversation.js'
 import Interview from './Interview.js'
 import { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses.mjs'
 import { AUDIO_CHUNK_SIZE } from '../../utils/constants.js'
+import { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'openai/resources'
 
 export const sendViaWS = (ws: WebSocket, type: string, message: string | object) => {
   if (typeof message === 'object') {
@@ -23,7 +24,7 @@ export const generateAudio = async (input: string) => {
   return audio
 }
 
-export const connectToSTTSocket = async (localServerWs: WebSocket, sessionId: string, context: { transcripts: { role: string, content: string }[] }): Promise<WebSocket> => {
+export const connectToSTTSocket = async (localServerWs: WebSocket, sessionId: string, context: { transcripts: ChatCompletionMessageParam[] }): Promise<WebSocket> => {
   const webSocket = new WebSocket('ws://vosk-stt:8765')
 
   const interviewSession = await Interview.findOne({ where: { sessionId: sessionId } })
@@ -34,7 +35,7 @@ export const connectToSTTSocket = async (localServerWs: WebSocket, sessionId: st
   webSocket.on('message', async (data: WebSocket.RawData) => {
     const message = JSON.parse(data.toString())
     if (message.type === 'final') {
-      console.log('Received message:', message)
+      // console.log('Received message:', message)
       /**
        * TODOs
        * 1.Save to DB - Done
@@ -54,21 +55,26 @@ export const connectToSTTSocket = async (localServerWs: WebSocket, sessionId: st
         content: message.transcript,
       })
 
-      const completion = await openai.responses.create({
+      console.log('context.transcripts', context.transcripts)
+
+      const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
-        input: context.transcripts as ResponseCreateParamsNonStreaming['input'],
+        messages: [{
+          role: 'system',
+          content: INTERVIEWER_PROMPT,
+        }, ...context.transcripts],
       })
 
-      console.log('ResponseCreateParamsNonStreaming', completion.output_text)
+      console.log('ResponseCreateParamsNonStreaming', JSON.stringify(completion))
 
-      context.transcripts.push({
-        role: 'assistant',
-        content: completion.output_text,
-      })
+      // context.transcripts.push({
+      //   role: 'assistant',
+      //   content: completion.output_text,
+      // })
 
-      const audio = await generateAudio(completion.output_text)
+      // const audio = await generateAudio(completion.output_text)
 
-      await dispatchAudioChunksViaWS(localServerWs, audio, completion.output_text)
+      // await dispatchAudioChunksViaWS(localServerWs, audio, completion.output_text)
     }
   })
 
