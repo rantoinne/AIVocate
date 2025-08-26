@@ -13,6 +13,17 @@ services:
     networks:
       - shared-network
 
+  aivocate-redis:
+    container_name: aivocate-redis
+    image: redis:8.2.1
+    restart: always
+    volumes:
+      - ./aivocate-redis:/data:cached
+    ports:
+      - 6379:6379
+    networks:
+      - shared-network
+
   aivocate-node:
     container_name: aivocate-node
     image: node:23.10
