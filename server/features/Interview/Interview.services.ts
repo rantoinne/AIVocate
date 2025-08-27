@@ -5,6 +5,7 @@ import Interview from './Interview.js'
 import { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses.mjs'
 import { AUDIO_CHUNK_SIZE } from '../../utils/constants.js'
 import { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'openai/resources'
+import { syncTranscriptQueue } from './Interview.cron.js'
 
 export const sendViaWS = (ws: WebSocket, type: string, message: string | object) => {
   if (typeof message === 'object') {
@@ -24,10 +25,17 @@ export const generateAudio = async (input: string) => {
   return audio
 }
 
-export const connectToSTTSocket = async (localServerWs: WebSocket, sessionId: string, context: { transcripts: ChatCompletionMessageParam[] }): Promise<WebSocket> => {
-  const webSocket = new WebSocket('ws://vosk-stt:8765')
+export const connectToSTTSocket = async (
+  localServerWs: WebSocket,
+  sessionId: string,
+  context: { transcripts: ChatCompletionMessageParam[] }
+): Promise<WebSocket> => {
+  const webSocket = new WebSocket(`ws://${process.env.VOSK_STT_HOST}:${process.env.VOSK_STT_PORT}`)
 
   const interviewSession = await Interview.findOne({ where: { sessionId: sessionId } })
+
+  const interviewId = interviewSession.get('id')
+  
   webSocket.on('open', () => {
     console.log('Connected to Vosk-stt')
   })
@@ -35,14 +43,8 @@ export const connectToSTTSocket = async (localServerWs: WebSocket, sessionId: st
   webSocket.on('message', async (data: WebSocket.RawData) => {
     const message = JSON.parse(data.toString())
     if (message.type === 'final') {
-      // console.log('Received message:', message)
-      /**
-       * TODOs
-       * 1.Save to DB - Done
-       * 2.Get completion - Done
-       * 3.Generate Audio - Done
-       * 4.sendToWS(localServerWs, 'ai_message', audio chunks similar to greeting message) - Done
-       *  */
+      await syncTranscriptQueue.add('push-transcript', { message: message.transcript, speaker: 'user', interviewId })
+
       sendViaWS(localServerWs, 'user_transcript', message.transcript)
       await AIConversation.create({
         messageType: 'TEXT',
@@ -60,7 +62,7 @@ export const connectToSTTSocket = async (localServerWs: WebSocket, sessionId: st
       const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [{
-          role: 'system',
+          role: 'developer',
           content: INTERVIEWER_PROMPT,
         }, ...context.transcripts],
       })
