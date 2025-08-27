@@ -11,12 +11,12 @@ const LandingPage: React.FC = () => {
   
   const onClickStartInterview = async () => {
     const res: any = await post('interview-session')
-    setLocalStorageKey(LOCAL_STORAGE_KEYS.INTERVIEW_SESSION_KEY, res?.interview.session_id)
+    setLocalStorageKey(LOCAL_STORAGE_KEYS.INTERVIEW_SESSION_KEY, res?.interview.sessionId)
     navigate(
       '/interview',
       {
         state: {
-          sessionId: res?.interview.session_id
+          sessionId: res?.interview.sessionId
         }
       }
     )
@@ -27,20 +27,6 @@ const LandingPage: React.FC = () => {
     // if (sessionId) {
     //   alert('We detected an ongoing session on this browser. Would you like to continue?')
     // }
-    const func = async () => {
-      try {
-        // Request audio playback permission
-        await navigator.mediaDevices.getUserMedia({ audio: true })
-        
-        // Request microphone permission
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        stream.getTracks().forEach(track => track.stop())
-      } catch (error) {
-        console.error('Error requesting permissions:', error)
-        alert('Please enable microphone and audio permissions to continue with the interview')
-      }
-    }
-    // func()
   }, [])
   
   return (
