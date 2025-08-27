@@ -31,3 +31,4 @@ yarn_cache
 /prod
 .env
 judge0.conf
+/aivocate-redis
