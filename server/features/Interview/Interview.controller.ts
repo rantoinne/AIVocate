@@ -3,11 +3,12 @@ import Interview from './Interview.js'
 import { generateId } from '../../utils/strings.js'
 import { reqType, resType } from '../../config/types.js'
 import { asyncWrapper, asyncWsWrapper } from '../../utils/asyncWrapper.js'
-import { connectToSTTSocket, generateAudio, sendViaWS } from './Interview.services.js'
+import { connectToSTTSocket, dispatchAudioChunksViaWS, generateAudio, sendViaWS } from './Interview.services.js'
 import { AUDIO_CHUNK_SIZE } from '../../utils/constants.js'
+import { ChatCompletionMessageParam } from 'openai/resources'
 
 const interviewSession = async (ws: WebSocket, req: reqType) => {
-  const ctx: { transcripts: { role: string; content: string; }[] } = {
+  const ctx: { transcripts: ChatCompletionMessageParam[] } = {
     transcripts: []
   }
   
@@ -17,6 +18,9 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
   const voskWebSocket = await connectToSTTSocket(ws, interviewSessionId, ctx)
   // Send welcome message
   sendViaWS(ws, 'chat', 'Hello! Connected to interview session.')
+
+  // const greeting = await generateAudio('Interview begins shortly!')
+  // await dispatchAudioChunksViaWS(ws, greeting, 'Interview begins shortly')
 
   // Set up ping/pong mechanism to keep connection alive
   let pingInterval: NodeJS.Timeout
@@ -64,8 +68,6 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
             console.log('Unknown message type:', message.type)
             break
         }
-        
-        console.log('Unknown message type:', message.type)
       }
     } catch (err) {
       console.error('Error parsing message:', err)

@@ -5,6 +5,11 @@ import { ApplicationError } from './utils/errors.js'
 import pistonRouter from './features/Piston/Piston.routes.js'
 import interviewRouter, { interviewWebSocketEnabledRouter } from './features/Interview/Interview.routes.js'
 
+/**
+ * Cron Services
+ * */
+import './features/Interview/Interview.cron.js'
+
 export default function routes(app: expressWs.Application) {
   app.use(pistonRouter)
   app.use(interviewRouter)
