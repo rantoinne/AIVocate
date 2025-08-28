@@ -17,8 +17,9 @@ export const closeConnections = async () => {
   }
 }
 
-export const bullMQOpts: Pick<QueueOptions, 'connection'> = {
+export const bullMQOpts: QueueOptions = {
   connection: clientInstance as unknown as ConnectionOptions,
+  prefix: 'aivocate://'
 }
 
 export const bullMQWorkerOpts: WorkerOptions = {
@@ -26,5 +27,5 @@ export const bullMQWorkerOpts: WorkerOptions = {
   concurrency: 1,
   removeOnFail: { count: 10 },
   removeOnComplete: { count: 10 },
-  prefix: 'aivocate://'
+  prefix: 'aivocate://',
 }

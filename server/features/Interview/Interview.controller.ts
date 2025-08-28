@@ -19,8 +19,8 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
   // Send welcome message
   sendViaWS(ws, 'chat', 'Hello! Connected to interview session.')
 
-  const greeting = await generateAudio('Interview begins shortly!')
-  await dispatchAudioChunksViaWS(ws, greeting, 'Interview begins shortly')
+  // const greeting = await generateAudio('Interview begins shortly!')
+  // await dispatchAudioChunksViaWS(ws, greeting, 'Interview begins shortly')
 
   // Set up ping/pong mechanism to keep connection alive
   let pingInterval: NodeJS.Timeout
@@ -68,8 +68,6 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
             console.log('Unknown message type:', message.type)
             break
         }
-        
-        console.log('Unknown message type:', message.type)
       }
     } catch (err) {
       console.error('Error parsing message:', err)

@@ -46,12 +46,6 @@ export const connectToSTTSocket = async (
       await syncTranscriptQueue.add('push-transcript', { message: message.transcript, speaker: 'user', interviewId })
 
       sendViaWS(localServerWs, 'user_transcript', message.transcript)
-      await AIConversation.create({
-        messageType: 'TEXT',
-        speaker: 'ai_interviewer',
-        message: message.transcript,
-        interviewId: interviewSession.get('id'),
-      })
       context.transcripts.push({
         role: 'user',
         content: message.transcript,
@@ -69,10 +63,13 @@ export const connectToSTTSocket = async (
 
       console.log('ResponseCreateParamsNonStreaming', JSON.stringify(completion))
 
-      // context.transcripts.push({
-      //   role: 'assistant',
-      //   content: completion.output_text,
-      // })
+      context.transcripts.push({
+        role: 'assistant',
+        content: completion.choices[0].message.content,
+      })
+
+      await syncTranscriptQueue.add('push-transcript', { message: completion.choices[0].message.content, speaker: 'ai_interviewer', interviewId })
+
 
       // const audio = await generateAudio(completion.output_text)
 
