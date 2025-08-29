@@ -32,12 +32,10 @@ Create an accessible, intelligent interview practice platform that:
 ### 💻 Real-Time Coding Environment
 - **Live Code Editor**: Monaco Editor with syntax highlighting for multiple languages
 - **Instant Execution**: Secure code execution using Piston API (runs in a sandboxed Docker container on a shared network)
-- **Code Analysis**: Real-time feedback on code quality and performance
+- **Code Analysis**: Real-time feedback on code quality and performance (QwenCoder)
 - **Language Support**: JavaScript, Python, Java, C++, and more
 
 ### 🎥 Interactive Interview Experience
-- **Video Interface**: Face-to-face interaction with AI interviewer
-- **Screen Sharing**: Share coding session in real-time
 - **Session Recording**: Save interviews for later review
 - **Progress Tracking**: Monitor improvement over multiple sessions
 
@@ -71,10 +69,9 @@ server/
 
 ### Key Technologies
 - **Frontend**: React 18, TypeScript, Monaco Editor, WebRTC
-- **Backend**: Node.js, Express.js, Socket.io, MongoDB
-- **AI Services**: OpenAI API, ElevenLabs (TTS)
+- **Backend**: Node.js, Express.js, Socket.io, Postgres
+- **AI Services**: QwenCoder, Piper, Vosk
 - **Code Execution**: Piston API (Docker container, shared network)
-- **Deployment**: Vercel (Frontend), Railway (Backend)
 
 ## 🚀 Development Roadmap
 
@@ -86,38 +83,9 @@ server/
 - [ ] Database schema design
 - [ ] WebSocket integration for real-time communication
 
-### Phase 2: Core Features (Weeks 3-4)
-- [ ] Monaco Editor integration with syntax highlighting
-- [ ] OpenAI API integration for question generation
-- [ ] Basic AI interview flow implementation
-- [ ] Code execution service integration
-- [ ] Text-to-speech and speech recognition
-- [ ] User authentication and session management
-
-### Phase 3: Advanced Features (Weeks 5-6)
-- [ ] Video chat implementation using WebRTC
-- [ ] Advanced AI conversation logic
-- [ ] Code analysis and feedback system
-- [ ] Interview recording and playback
-- [ ] Performance analytics dashboard
-- [ ] Mobile-responsive design optimization
-
-### Phase 4: Polish & Launch (Weeks 7-8)
-- [ ] Comprehensive testing (unit, integration, e2e)
-- [ ] Performance optimization
-- [ ] Security hardening
-- [ ] Documentation completion
-- [ ] Deployment pipeline setup
-- [ ] Beta user testing and feedback incorporation
-
 ## 🛠️ Getting Started
 
 > **Note**: This section will be updated as development progresses.
-
-### Prerequisites
-- Node.js 18+
-- MongoDB 6+
-- Modern web browser with WebRTC support
 
 ### Installation
 ```bash
@@ -125,51 +93,13 @@ server/
 git clone https://github.com/rantoinne/aivocate.git
 cd aivocate
 
-# Install dependencies
-npm install
-
-# Install client dependencies
-cd client && npm install
-
-# Install server dependencies
-cd ../server && npm install
-
-# Set up environment variables
-cp .env.example .env
+docker compose up --build -d
 # Edit .env with your API keys and configuration
-```
-
-### Environment Variables
-```env
-# OpenAI API
-OPENAI_API_KEY=your_openai_api_key
-
-# Piston API
-PISTON_ENDPOINT=http://piston_api:2000
-
-# ElevenLabs TTS
-ELEVENLABS_API_KEY=your_elevenlabs_api_key
-
-# Database
-MONGODB_URI=mongodb://localhost:27017/aivocate
-
-# Server Configuration
-PORT=3001
-NODE_ENV=development
-```
-
-### Running the Application
-```bash
-# Start the development server (from root directory)
-npm run dev
-
-# The client will be available at http://localhost:3000
-# The server will be available at http://localhost:3001
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions! This project is in active development, and there are many opportunities to get involved.
+I welcome contributions! This project is in active development, and there are many opportunities to get involved.
 
 ### How to Contribute
 1. **Fork the repository**
@@ -180,18 +110,8 @@ We welcome contributions! This project is in active development, and there are m
 
 ### Development Guidelines
 - Follow TypeScript best practices
-- Write unit tests for new features
 - Use conventional commit messages
 - Update documentation for significant changes
-- Ensure mobile responsiveness for UI changes
-
-### Areas Where We Need Help
-- [ ] UI/UX improvements and accessibility
-- [ ] Additional programming language support
-- [ ] Advanced AI conversation patterns
-- [ ] Performance optimization
-- [ ] Testing and quality assurance
-- [ ] Documentation and tutorials
 
 ## 📈 Current Status
 
@@ -200,29 +120,18 @@ We welcome contributions! This project is in active development, and there are m
 - UI/UX mockups and prototypes
 - Technology stack selection
 - Development roadmap planning
+- Audio streaming from user and STT (Vosk)
+- TTS via openai's tts-1
+- Piston container
+
 
 ### 🚧 In Progress
-- Basic React application setup
-- Node.js server implementation
-- Database schema design
-- Core component development
-
-### ⏳ Planned
-- AI integration and testing
-- Real-time communication features
-- Code execution and analysis
-- Advanced interview scenarios
+- Sharing code overtime via ws
+- Migrating to QwenCoder for completions
 
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **OpenAI** for providing the GPT API that powers our AI interviewer
-- **Piston** for secure code execution capabilities (https://github.com/engineer-man/piston)
-- **Monaco Editor** team for the excellent code editing experience
-- **React** and **Node.js** communities for amazing open-source tools
 
 ## 📞 Contact & Support
 
@@ -252,6 +161,6 @@ Client                    Server                    AI Service
 
 **⭐ Star this repository if you find it interesting!**
 
-*Built in depression for the developer community*
+*Built with ❤️ for the developer community*
 
 </div>
