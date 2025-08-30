@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import { INTERVIEWER_PROMPT, openai } from "../../llm.js"
+import { getMessages, INTERVIEWER_PROMPT, openai } from "../../llm.js"
 import AIConversation from '../AIConversations/AIConversation.js'
 import Interview from './Interview.js'
 import { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses.mjs'
@@ -46,19 +46,17 @@ export const connectToSTTSocket = async (
       await syncTranscriptQueue.add('push-transcript', { message: message.transcript, speaker: 'user', interviewId })
 
       sendViaWS(localServerWs, 'user_transcript', message.transcript)
+      
+      console.log('context.transcripts', context.transcripts)
+      
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: getMessages(context.transcripts, message.transcript),
+      })
+
       context.transcripts.push({
         role: 'user',
         content: message.transcript,
-      })
-
-      console.log('context.transcripts', context.transcripts)
-
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{
-          role: 'developer',
-          content: INTERVIEWER_PROMPT,
-        }, ...context.transcripts],
       })
 
       console.log('ResponseCreateParamsNonStreaming', JSON.stringify(completion))
