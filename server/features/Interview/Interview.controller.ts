@@ -6,6 +6,7 @@ import { asyncWrapper, asyncWsWrapper } from '../../utils/asyncWrapper.js'
 import { connectToSTTSocket, dispatchAudioChunksViaWS, generateAudio, sendViaWS } from './Interview.services.js'
 import { AUDIO_CHUNK_SIZE } from '../../utils/constants.js'
 import { ChatCompletionMessageParam } from 'openai/resources'
+import { OllamaService } from '../AiService/AiService.service.js'
 
 const interviewSession = async (ws: WebSocket, req: reqType) => {
   const ctx: { transcripts: ChatCompletionMessageParam[] } = {
@@ -21,7 +22,17 @@ const interviewSession = async (ws: WebSocket, req: reqType) => {
 
   // const greeting = await generateAudio('Interview begins shortly!')
   // await dispatchAudioChunksViaWS(ws, greeting, 'Interview begins shortly')
+  const ollamaService = new OllamaService()
+  const message = await ollamaService.generateResponse({
 
+  }, {
+
+  })
+
+  console.log({ message })
+  const audio = await generateAudio(message)
+  await dispatchAudioChunksViaWS(ws, audio, message)
+  
   // Set up ping/pong mechanism to keep connection alive
   let pingInterval: NodeJS.Timeout
   let pongTimeout: NodeJS.Timeout
